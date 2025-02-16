@@ -1,5 +1,5 @@
 import torch
-from manim import *
+from manimlib import *
 
 
 def mask_mod(b, h, q_idx, kv_idx):
@@ -9,8 +9,8 @@ def mask_mod(b, h, q_idx, kv_idx):
 def matrix_center(group):
     return group[1].get_center()
 
-class AttentionScoresVisualization(Scene):
 
+class AttentionScoresVisualization(Scene):
     def highlight_dot_product(
         self, row_index, col_index, query_group, key_T_group, attention_group
     ):
@@ -110,7 +110,10 @@ class AttentionScoresVisualization(Scene):
             query_group_copy, times, key_T_group_copy, equals, attention_group
         ).arrange(RIGHT, buff=0.5, aligned_edge=ORIGIN)
 
-        times.move_to(midpoint(matrix_center(equation[0]), matrix_center(equation[2])) - 0.5 * RIGHT)
+        times.move_to(
+            midpoint(matrix_center(equation[0]), matrix_center(equation[2]))
+            - 0.5 * RIGHT
+        )
         equals.move_to(midpoint(matrix_center(equation[2]), matrix_center(equation[4])))
 
         # Scale and center the equation
@@ -121,14 +124,9 @@ class AttentionScoresVisualization(Scene):
         self.play(
             Transform(query_group, equation[0]),
             Transform(key_T_group, equation[2]),
-            run_time=1.0
+            run_time=1.0,
         )
-        self.play(
-            FadeIn(times),
-            FadeIn(equals),
-            FadeIn(attention_group),
-            run_time=1
-        )
+        self.play(FadeIn(times), FadeIn(equals), FadeIn(attention_group), run_time=1)
         self.remove(query_group_copy, key_T_group_copy)
         self.wait(1)
 
@@ -138,7 +136,9 @@ class AttentionScoresVisualization(Scene):
             )
 
         # Focus on the attention_scores matrix
-        causal_attention_text = Text("Causal Attention", font_size=40).center().to_edge(UP)
+        causal_attention_text = (
+            Text("Causal Attention", font_size=40).center().to_edge(UP)
+        )
         self.play(
             FadeOut(query_group),
             FadeOut(key_T_group),
@@ -161,7 +161,7 @@ class AttentionScoresVisualization(Scene):
             language="python",
             font="Monospace",
             font_size=24,
-            insert_line_no=False
+            insert_line_no=False,
         )
         mask_mod_text.to_edge(DOWN, buff=0.5)
 
@@ -179,16 +179,18 @@ class AttentionScoresVisualization(Scene):
                     language="python",
                     font="Monospace",
                     font_size=24,
-                    insert_line_no=False
+                    insert_line_no=False,
                 ).to_edge(DOWN, buff=0.5)
 
                 if mask_mod(0, 0, i, j):
                     color = GREEN
-                    new_value = attention_group[1].get_entries()[i*4 + j].copy()
+                    new_value = attention_group[1].get_entries()[i * 4 + j].copy()
                     output_text = Text("Keep", font_size=20, color=GREEN)
                 else:
                     color = RED
-                    new_value = Text("-inf", font_size=24, color=RED).move_to(attention_group[1].get_entries()[i*4 + j])
+                    new_value = Text("-inf", font_size=24, color=RED).move_to(
+                        attention_group[1].get_entries()[i * 4 + j]
+                    )
                     output_text = Text("Mask", font_size=20, color=RED)
 
                 output_text.next_to(mask_mod_text, UP, buff=0.2)
@@ -196,15 +198,22 @@ class AttentionScoresVisualization(Scene):
 
                 self.play(
                     Transform(mask_mod_text, new_call_text),
-                    Flash(attention_group[1].get_entries()[i*4 + j], color=color, flash_radius=0.3),
-                    Transform(attention_group[1].get_entries()[i*4 + j], new_value),
+                    Flash(
+                        attention_group[1].get_entries()[i * 4 + j],
+                        color=color,
+                        flash_radius=0.3,
+                    ),
+                    Transform(attention_group[1].get_entries()[i * 4 + j], new_value),
                     FadeIn(output_text),
-                    run_time=0.3  # Reduced run_time
+                    run_time=0.3,  # Reduced run_time
                 )
                 self.wait(0.1)  # Reduced wait time
-                self.play(FadeOut(output_text), run_time=0.2)  # Reduced run_time for FadeOut
+                self.play(
+                    FadeOut(output_text), run_time=0.2
+                )  # Reduced run_time for FadeOut
 
         self.wait(1)  # Reduced final wait time
+
 
 # To run this animation, use the command:
 # manim -pqh attention_scores_visualization.py AttentionScoresVisualization

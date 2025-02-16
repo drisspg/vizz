@@ -6,7 +6,6 @@ class Scaling(Scene):
     def per_tensor(self, matrix: torch.Tensor):
         pass
 
-
     def scan_rectangle(self, matrix, H, W):
         """Animates a rectangle of H,W shape over a matrix
         Calculating the abs_max value
@@ -30,7 +29,7 @@ class Scaling(Scene):
         #         self.wait(0.5)
 
     def construct(self):
-        matrix = torch.arange(16).view(4,4)
+        matrix = torch.arange(16).view(4, 4)
         matrix = matrix.float()
 
         matrix = Matrix(matrix.tolist())
@@ -46,7 +45,6 @@ class Scaling(Scene):
         # self.play(ShowCreation(rect))
         # self.play(FadeOut(rect))
 
-
         H, W = 3, 3  # Example dimensions
 
         # Get the positions of the corner elements
@@ -58,7 +56,7 @@ class Scaling(Scene):
             return horizontal, vertical, 0
 
         # Get the element positions and calculate their spacing
-        top_element = matrix.get_entries()[0][0]
+        # top_element = matrix.get_entries()[0][0]
         right_element = matrix.get_entries()[0][1]
         bottom_element = matrix.get_entries()[1][0]
 
@@ -70,8 +68,8 @@ class Scaling(Scene):
         print(h_units)
         rect = Rectangle(
             height=H * v_units,  # H units tall
-            width=W * H,   # W units wide
-            color=RED
+            width=W * H,  # W units wide
+            color=RED,
         )
         new_center = get_center(matrix, H, W)
         print(new_center)

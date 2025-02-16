@@ -1,5 +1,5 @@
 import torch
-from manim import *
+from manimlib import *
 
 
 def prefix_lm(b, h, q_idx, kv_idx):

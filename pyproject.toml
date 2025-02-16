@@ -24,7 +24,7 @@ classifiers = [
 dependencies = [
     "torch",
     "manimgl",
-    "ruff",
+    "ruff"
 ]
 
 [tool.black]
@@ -34,4 +34,7 @@ include = '\.pyi?$'
 
 [tool.isort]
 profile = "black"
-multi_line_output = 3 
+multi_line_output = 3
+
+[tool.ruff]
+ignore = ["F405", "F403"]
