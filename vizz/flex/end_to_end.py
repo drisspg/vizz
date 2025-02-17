@@ -1,8 +1,11 @@
 import torch
 from manimlib import *
+from manimlib.constants import FRAME_WIDTH
+from manimlib import Code
 
 
 def mask_mod(b, h, q_idx, kv_idx):
+    _ = b, h
     return q_idx >= kv_idx
 
 
@@ -20,16 +23,16 @@ class AttentionScoresVisualization(Scene):
 
         # Create rectangles that match the dimensions of the row and column
         row_highlight = Rectangle(
-            width=query_row.width,
-            height=query_row.height,
+            width=query_row.get_width(),
+            height=query_row.get_height(),
             fill_color=YELLOW,
             fill_opacity=0.2,
             stroke_width=0,
         ).move_to(query_row)
 
         col_highlight = Rectangle(
-            width=key_col.width,
-            height=key_col.height,
+            width=key_col.get_width(),
+            height=key_col.get_height(),
             fill_color=BLUE,
             fill_opacity=0.2,
             stroke_width=0,
@@ -39,8 +42,8 @@ class AttentionScoresVisualization(Scene):
         target_cell = attention_group[1].get_entries()[row_index * 4 + col_index]
 
         cell_highlight = Rectangle(
-            width=target_cell.width,
-            height=target_cell.height,
+            width=target_cell.get_width(),
+            height=target_cell.get_height(),
             fill_color=GREEN,
             fill_opacity=0.2,
             stroke_width=0,
@@ -80,7 +83,7 @@ class AttentionScoresVisualization(Scene):
         # Step 2: Transpose key
         key_T = key.T
         key_T_matrix = Matrix(key_T.tolist())
-        key_T_label = Tex("Key$^T$").next_to(key_T_matrix, UP)
+        key_T_label = Tex(r"Key^T").next_to(key_T_matrix, UP)
         key_T_group = VGroup(key_T_label, key_T_matrix)
 
         # Calculate the target positions
@@ -115,9 +118,9 @@ class AttentionScoresVisualization(Scene):
             - 0.5 * RIGHT
         )
         equals.move_to(midpoint(matrix_center(equation[2]), matrix_center(equation[4])))
-
+        scale_factor = min(1, (FRAME_WIDTH - 1) / equation.get_width())
         # Scale and center the equation
-        scale_factor = min(1, (config.frame_width - 1) / equation.width)
+        scale_factor = min(1, (FRAME_WIDTH - 1) / equation.get_width())
         equation.scale(scale_factor).center()
 
         # Animate the transition smoothly
@@ -161,7 +164,7 @@ class AttentionScoresVisualization(Scene):
             language="python",
             font="Monospace",
             font_size=24,
-            insert_line_no=False,
+            # insert_line_no=False,
         )
         mask_mod_text.to_edge(DOWN, buff=0.5)
 
@@ -179,7 +182,7 @@ class AttentionScoresVisualization(Scene):
                     language="python",
                     font="Monospace",
                     font_size=24,
-                    insert_line_no=False,
+                    # insert_line_no=False,
                 ).to_edge(DOWN, buff=0.5)
 
                 if mask_mod(0, 0, i, j):

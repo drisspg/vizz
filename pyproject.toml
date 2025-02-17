@@ -23,7 +23,7 @@ classifiers = [
 ]
 dependencies = [
     "torch",
-    "manimgl",
+    "manimgl==1.7.2",
     "ruff"
 ]
 
