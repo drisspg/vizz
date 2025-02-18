@@ -1,5 +1,8 @@
 .vscode
 media/
+*.DS_Store
+videos/
+.DS_Store
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

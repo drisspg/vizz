@@ -1,11 +1,148 @@
 from manimlib import *
 
 
+class BlockMaskScoreAnimation(Scene):
+    def construct(self):
+        # Initial setup
+        self.seq_len = 6
+        self.block_size = 2
+
+        # Create the title
+        self.title = Text("Causal Block Mask Visualization", font_size=40).to_edge(UP)
+
+        # Create the attention matrix
+        self.setup_attention_matrix()
+
+        # Create the equation template
+        self.setup_equation()
+
+        # Create reusable highlight box and output text.
+        # (We create them off-screen first.)
+        self.highlight_box = Square(
+            side_length=0.5, stroke_color=YELLOW, stroke_width=3, fill_opacity=0
+        )
+        self.highlight_box.move_to(100 * RIGHT)
+        self.add(self.highlight_box)
+
+        self.output_text = Text("", font_size=20)
+        self.output_text.move_to(self.equation.get_center() + DOWN * 0.5)
+        self.add(self.output_text)
+
+        # Display initial setup
+        self.play(Write(self.attention_matrix), Write(self.title), Write(self.equation))
+        self.wait(0.5)
+
+        # Apply the mask animations
+        self.apply_causal_mask()
+
+        # Show completion
+        self.show_completion()
+
+    def setup_attention_matrix(self):
+        squares = VGroup()
+        for i in range(self.seq_len):
+            for j in range(self.seq_len):
+                square = Square(
+                    side_length=0.5,
+                    stroke_color=WHITE,
+                    stroke_width=1,
+                    fill_opacity=0.1,
+                )
+                square.move_to([j * 0.5, -i * 0.5, 0])
+                squares.add(square)
+
+        # Add index labels (for query and key)
+        q_indices = VGroup(
+            *[
+                Text(str(i), font_size=20, color=BLUE).next_to(
+                    squares[i * self.seq_len], LEFT, buff=0.3
+                )
+                for i in range(self.seq_len)
+            ]
+        )
+        k_indices = VGroup(
+            *[
+                Text(str(i), font_size=20, color=RED).next_to(squares[i], UP, buff=0.3)
+                for i in range(self.seq_len)
+            ]
+        )
+
+        self.attention_matrix = VGroup(squares, q_indices, k_indices)
+        self.attention_matrix.move_to(ORIGIN)
+        self.squares = squares
+
+    def setup_equation(self):
+        self.equation = Text(
+            "causal_mask(q_idx = 0, kv_idx = 0) = True", font_size=24
+        ).next_to(self.title, DOWN)
+
+    def apply_causal_mask(self):
+        for q_idx in range(self.seq_len):
+            for k_idx in range(self.seq_len):
+                pos_idx = q_idx * self.seq_len + k_idx
+                result = self.causal_attention(q_idx, k_idx)
+                result_str = "True" if result else "False"
+
+                ### Reuse the highlight_box by moving it to the current square
+                self.play(
+                    self.highlight_box.animate.move_to(self.squares[pos_idx]),
+                    run_time=0.1,
+                )
+
+                ### Update the equation text.
+                # Here we create a new Text mobject and transform the existing one.
+                new_eq_content = (
+                    f"causal_mask(q_idx = {q_idx}, kv_idx = {k_idx}) = {result_str}"
+                )
+                new_equation = Text(new_eq_content, font_size=24).move_to(
+                    self.equation.get_center()
+                )
+                self.play(Transform(self.equation, new_equation), run_time=0.15)
+
+                ### Flash effect and update square color
+                self.play(
+                    Flash(
+                        self.squares[pos_idx],
+                        color=GREEN if result else RED,
+                        flash_radius=0.3,
+                    ),
+                    self.squares[pos_idx].animate.set_fill(
+                        color=GREEN if result else RED, opacity=0.3
+                    ),
+                    run_time=0.15,
+                )
+
+                ### Reuse the output_text object by updating its content.
+                new_output_content = "Keep" if result else "Mask"
+                # Instead of creating a brand-new output text each time,
+                # we use become() to have self.output_text take on new content.
+                self.output_text.become(
+                    Text(
+                        new_output_content, font_size=20, color=GREEN if result else RED
+                    ).move_to(self.equation.get_center() + DOWN * 0.5)
+                )
+                self.play(FadeIn(self.output_text, run_time=0.1))
+                self.play(FadeOut(self.output_text, run_time=0.1))
+
+        # Remove the reused objects once done.
+        self.remove(self.highlight_box, self.output_text)
+
+    def show_completion(self):
+        final_text = Text("Causal Block Mask Pattern Complete", font_size=24).to_edge(
+            DOWN
+        )
+        self.play(Write(final_text))
+        self.wait(0.5)
+
+    def causal_attention(self, q_idx, k_idx):
+        return k_idx <= q_idx
+
+
 def causal_attention(b, h, q_idx, kv_idx):
     return q_idx >= kv_idx
 
 
-class BlockMaskDataAnimation(Scene):
+class BlockMaskKVCreation(Scene):
     def construct(self):
         # Initial setup
         seq_len = 8
@@ -182,13 +319,13 @@ class BlockMaskDataAnimation(Scene):
                             new_square = squares[pos_idx].copy()
                             new_square.set_fill(GREEN, opacity=0.7)
                             self.play(
-                                Transform(squares[pos_idx], new_square), run_time=0.1
+                                Transform(squares[pos_idx], new_square), run_time=0.05
                             )
                         else:
                             new_square = squares[pos_idx].copy()
-                            new_square.set_fill(WHITE, opacity=0.1)
+                            new_square.set_fill(RED, opacity=0.1)
                             self.play(
-                                Transform(squares[pos_idx], new_square), run_time=0.1
+                                Transform(squares[pos_idx], new_square), run_time=0.05
                             )
 
                 if block_needed:
@@ -233,10 +370,3 @@ class BlockMaskDataAnimation(Scene):
         )
         self.play(Write(final_text))
         self.wait(2)
-
-
-def main():
-    from manimlib import config
-
-    module = BlockMaskDataAnimation()
-    config.run_module(module)

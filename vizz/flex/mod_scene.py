@@ -64,12 +64,12 @@ class MaskAnimationScene(Scene):
         self, mod_str: str, b="b", h="h", q_idx="q_idx", kv_idx="kv_idx"
     ):
         formatted_code = str_map[mod_str].format(b=b, h=h, q_idx=q_idx, kv_idx=kv_idx)
-        return Code(
-            code=formatted_code,
-            language="python",
+        return Text(
+            str(formatted_code),
+            # language="python",
             font="Monospace",
             font_size=24,
-            insert_line_no=False,
+            # insert_line_no=False,
         ).to_edge(DOWN, buff=0.5)
 
     def apply_mask_to_cell(self, i, j, mask_func, mod_str):
