@@ -1,14 +1,28 @@
 from manimlib import *
+from enum import Enum
+
+
+class MaskType(Enum):
+    CAUSAL = "causal_mask_mod"
+
+
+def causal_attention(b, h, q_idx, kv_idx):
+    return q_idx >= kv_idx
 
 
 class BlockMaskScoreAnimation(Scene):
+    mask_mods = {MaskType.CAUSAL.value: causal_attention}
+
     def construct(self):
         # Initial setup
         self.seq_len = 6
         self.block_size = 2
 
+        self.mask_mod = MaskType.CAUSAL
+
         # Create the title
-        self.title = Text("Causal Block Mask Visualization", font_size=40).to_edge(UP)
+        title_text = self.mask_mod.value.replace("_", " ").title()
+        self.title = Text(f"{title_text} Visualization", font_size=40).to_edge(UP)
 
         # Create the attention matrix
         self.setup_attention_matrix()
@@ -34,9 +48,6 @@ class BlockMaskScoreAnimation(Scene):
 
         # Apply the mask animations
         self.apply_causal_mask()
-
-        # Show completion
-        self.show_completion()
 
     def setup_attention_matrix(self):
         squares = VGroup()
@@ -73,14 +84,16 @@ class BlockMaskScoreAnimation(Scene):
 
     def setup_equation(self):
         self.equation = Text(
-            "causal_mask(q_idx = 0, kv_idx = 0) = True", font_size=24
+            f"{self.mask_mod.value}(q_idx = 0, kv_idx = 0) = {self.mask_mods[self.mask_mod.value](0, 0, 0, 0)}",
+            font_size=24,
         ).next_to(self.title, DOWN)
 
-    def apply_causal_mask(self):
+    def apply_causal_mask(self, play_pop: bool = False):
+        mask_mod = self.mask_mods[self.mask_mod.value]
         for q_idx in range(self.seq_len):
             for k_idx in range(self.seq_len):
                 pos_idx = q_idx * self.seq_len + k_idx
-                result = self.causal_attention(q_idx, k_idx)
+                result = mask_mod(0, 0, q_idx, k_idx)
                 result_str = "True" if result else "False"
 
                 ### Reuse the highlight_box by moving it to the current square
@@ -90,14 +103,11 @@ class BlockMaskScoreAnimation(Scene):
                 )
 
                 ### Update the equation text.
-                # Here we create a new Text mobject and transform the existing one.
-                new_eq_content = (
-                    f"causal_mask(q_idx = {q_idx}, kv_idx = {k_idx}) = {result_str}"
-                )
+                new_eq_content = f"{MaskType.CAUSAL.value}(q_idx = {q_idx}, kv_idx = {k_idx}) = {result_str}"
                 new_equation = Text(new_eq_content, font_size=24).move_to(
                     self.equation.get_center()
                 )
-                self.play(Transform(self.equation, new_equation), run_time=0.15)
+                self.equation.become(new_equation)
 
                 ### Flash effect and update square color
                 self.play(
@@ -109,20 +119,21 @@ class BlockMaskScoreAnimation(Scene):
                     self.squares[pos_idx].animate.set_fill(
                         color=GREEN if result else RED, opacity=0.3
                     ),
-                    run_time=0.15,
+                    run_time=0.05,
                 )
 
-                ### Reuse the output_text object by updating its content.
-                new_output_content = "Keep" if result else "Mask"
-                # Instead of creating a brand-new output text each time,
-                # we use become() to have self.output_text take on new content.
-                self.output_text.become(
-                    Text(
-                        new_output_content, font_size=20, color=GREEN if result else RED
-                    ).move_to(self.equation.get_center() + DOWN * 0.5)
-                )
-                self.play(FadeIn(self.output_text, run_time=0.1))
-                self.play(FadeOut(self.output_text, run_time=0.1))
+                # ### Reuse the output_text object by updating its content.
+                if play_pop:
+                    new_output_content = "Keep" if result else "Mask"
+                    self.output_text.become(
+                        Text(
+                            new_output_content,
+                            font_size=20,
+                            color=GREEN if result else RED,
+                        ).move_to(self.equation.get_center() + DOWN * 0.5)
+                    )
+                    self.play(FadeIn(self.output_text, run_time=0.1))
+                    self.play(FadeOut(self.output_text, run_time=0.1))
 
         # Remove the reused objects once done.
         self.remove(self.highlight_box, self.output_text)
@@ -133,13 +144,6 @@ class BlockMaskScoreAnimation(Scene):
         )
         self.play(Write(final_text))
         self.wait(0.5)
-
-    def causal_attention(self, q_idx, k_idx):
-        return k_idx <= q_idx
-
-
-def causal_attention(b, h, q_idx, kv_idx):
-    return q_idx >= kv_idx
 
 
 class BlockMaskKVCreation(Scene):
