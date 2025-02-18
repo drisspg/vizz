@@ -10,9 +10,10 @@ def causal_attention(b, h, q_idx, kv_idx):
     return q_idx >= kv_idx
 
 
-class BlockMaskScoreAnimation(Scene):
-    mask_mods = {MaskType.CAUSAL.value: causal_attention}
+mask_mods = {MaskType.CAUSAL.value: causal_attention}
 
+
+class BlockMaskScoreAnimation(Scene):
     def construct(self):
         # Initial setup
         self.seq_len = 6
@@ -84,12 +85,12 @@ class BlockMaskScoreAnimation(Scene):
 
     def setup_equation(self):
         self.equation = Text(
-            f"{self.mask_mod.value}(q_idx = 0, kv_idx = 0) = {self.mask_mods[self.mask_mod.value](0, 0, 0, 0)}",
+            f"{self.mask_mod.value}(q_idx = 0, kv_idx = 0) = {mask_mods[self.mask_mod.value](0, 0, 0, 0)}",
             font_size=24,
         ).next_to(self.title, DOWN)
 
     def apply_causal_mask(self, play_pop: bool = False):
-        mask_mod = self.mask_mods[self.mask_mod.value]
+        mask_mod = mask_mods[self.mask_mod.value]
         for q_idx in range(self.seq_len):
             for k_idx in range(self.seq_len):
                 pos_idx = q_idx * self.seq_len + k_idx
@@ -153,36 +154,10 @@ class BlockMaskKVCreation(Scene):
         block_size = 2
         num_block_rows = seq_len // block_size
         square_size = 0.5
+        mask_mod = MaskType.CAUSAL
+        mask_mod_func = mask_mods[mask_mod.value]
 
-        # Create attention matrix
-        squares = VGroup()
-        for i in range(seq_len):
-            for j in range(seq_len):
-                square = Square(
-                    side_length=square_size,
-                    stroke_color=WHITE,
-                    stroke_width=1,
-                    fill_opacity=0.1,
-                )
-                square.move_to([j * square_size, -i * square_size, 0])
-                squares.add(square)
-
-        # Create axis labels
-        q_indices = VGroup(
-            *[
-                Text(str(i), font_size=20).next_to(squares[i * seq_len], LEFT, buff=0.3)
-                for i in range(seq_len)
-            ]
-        )
-        k_indices = VGroup(
-            *[
-                Text(str(i), font_size=20).next_to(squares[i], UP, buff=0.3)
-                for i in range(seq_len)
-            ]
-        )
-
-        # Group attention matrix components
-        attention_matrix = VGroup(squares, q_indices, k_indices)
+        attention_matrix, squares = self.setup_attention_matrix(seq_len, seq_len)
         attention_matrix.move_to(ORIGIN + LEFT * 3)
 
         # Create main title
@@ -332,7 +307,7 @@ class BlockMaskKVCreation(Scene):
                 # Check causal attention for each position in the block
                 for q_idx in range(q_start, q_end):
                     for k_idx in range(k_start, k_end):
-                        can_attend = causal_attention(0, 0, q_idx, k_idx)
+                        can_attend = mask_mod_func(0, 0, q_idx, k_idx)
                         pos_idx = q_idx * seq_len + k_idx
 
                         new_square = squares[pos_idx].copy()
@@ -394,9 +369,41 @@ class BlockMaskKVCreation(Scene):
             )
             self.wait(0.5)
 
-        # Final state
-        final_text = Text("BlockMask Data Structure Complete", font_size=24).to_edge(
-            DOWN
+        # # Final state
+        # final_text = Text("BlockMask Data Structure Complete", font_size=24).to_edge(
+        #     DOWN
+        # )
+        # self.play(Write(final_text))
+        # self.wait(2)
+
+    def setup_attention_matrix(self, seq_len_q, seq_len_kv):
+        squares = VGroup()
+        for i in range(seq_len_q):
+            for j in range(seq_len_kv):
+                square = Square(
+                    side_length=0.5,
+                    stroke_color=WHITE,
+                    stroke_width=1,
+                    fill_opacity=0.1,
+                )
+                square.move_to([j * 0.5, -i * 0.5, 0])
+                squares.add(square)
+
+        # Add index labels (for query and key)
+        q_indices = VGroup(
+            *[
+                Text(str(i), font_size=20, color=BLUE).next_to(
+                    squares[i * seq_len_q], LEFT, buff=0.3
+                )
+                for i in range(seq_len_q)
+            ]
         )
-        self.play(Write(final_text))
-        self.wait(2)
+        k_indices = VGroup(
+            *[
+                Text(str(i), font_size=20, color=RED).next_to(squares[i], UP, buff=0.3)
+                for i in range(seq_len_kv)
+            ]
+        )
+
+        attention_matrix = VGroup(squares, q_indices, k_indices)
+        return attention_matrix, squares
