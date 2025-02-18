@@ -225,28 +225,21 @@ class BlockMaskKVCreation(Scene):
             kv_indices_matrix.add(row)
         kv_indices_matrix.arrange(DOWN, buff=0)
 
-        # Position matrices aligned with attention matrix
-        # Position attention matrix and title - accounting for index labels
-        attention_title.next_to(
-            squares, UP, buff=0.8
-        )  # Increased buffer to make room for indices
-        attention_title.set_x(
-            squares.get_center()[0]
-        )  # Center align with attention matrix
+        # Position matrices
+        attention_title.next_to(squares, UP, buff=0.8)
+        attention_title.set_x(squares.get_center()[0])
 
-        # Position num_blocks matrix and title
         num_blocks_title.next_to(attention_matrix, RIGHT, buff=2)
         num_blocks_matrix.next_to(num_blocks_title, DOWN, buff=0.5)
-        num_blocks_matrix.align_to(squares, UP)  # Align with attention matrix top
+        num_blocks_matrix.align_to(squares, UP)
         num_blocks_title.next_to(num_blocks_matrix, UP, buff=0.3)
-        num_blocks_title.align_to(attention_title, UP)  # Align with attention title
+        num_blocks_title.align_to(attention_title, UP)
 
-        # Position kv_indices matrix and title
         kv_indices_title.next_to(num_blocks_title, RIGHT, buff=2)
         kv_indices_matrix.next_to(kv_indices_title, DOWN, buff=0.5)
-        kv_indices_matrix.align_to(squares, UP)  # Align with attention matrix top
+        kv_indices_matrix.align_to(squares, UP)
         kv_indices_title.next_to(kv_indices_matrix, UP, buff=0.3)
-        kv_indices_title.align_to(attention_title, UP)  # Align with attention title
+        kv_indices_title.align_to(attention_title, UP)
 
         # Initial animation
         self.play(Write(title))
@@ -263,9 +256,8 @@ class BlockMaskKVCreation(Scene):
             q_end = q_start + block_size
             num_computed_blocks = 0
 
-            # Create highlights for all three matrices
-            # Attention matrix highlight
-            attention_highlight = (
+            # Create horizontal highlight (row)
+            attention_highlight_row = (
                 Rectangle(
                     width=seq_len * square_size,
                     height=block_size * square_size,
@@ -281,7 +273,6 @@ class BlockMaskKVCreation(Scene):
                 .align_to(squares[q_start * seq_len], UP + LEFT)
             )
 
-            # num_blocks matrix highlight
             num_blocks_highlight = Rectangle(
                 width=square_size,
                 height=square_size,
@@ -290,7 +281,6 @@ class BlockMaskKVCreation(Scene):
                 fill_opacity=0.1,
             ).move_to(num_blocks_matrix[block_row].get_center())
 
-            # kv_indices matrix highlight
             kv_indices_highlight = Rectangle(
                 width=num_block_rows * square_size,
                 height=square_size,
@@ -299,58 +289,91 @@ class BlockMaskKVCreation(Scene):
                 fill_opacity=0.1,
             ).move_to(kv_indices_matrix[block_row].get_center())
 
-            # Show all highlights
+            # Initial highlights for row
             self.play(
-                ShowCreation(attention_highlight),
+                ShowCreation(attention_highlight_row),
                 ShowCreation(num_blocks_highlight),
                 ShowCreation(kv_indices_highlight),
             )
 
             # Process each key block in the row
             for block_col in range(num_block_rows):
+                # Create vertical highlight (column) for current block
+                attention_highlight_col = (
+                    Rectangle(
+                        width=block_size * square_size,
+                        height=block_size * square_size,
+                        stroke_color=YELLOW,
+                        fill_color=YELLOW,
+                        fill_opacity=0.0,
+                    )
+                    .move_to(
+                        VGroup(
+                            *[
+                                squares[i * seq_len + block_col * block_size]
+                                for i in range(q_start, q_end)
+                            ]
+                        ).get_center()
+                    )
+                    .align_to(
+                        squares[q_start * seq_len + block_col * block_size], UP + LEFT
+                    )
+                )
+
+                # Show column highlight
+                self.play(ShowCreation(attention_highlight_col), run_time=0.2)
                 k_start = block_col * block_size
                 k_end = k_start + block_size
 
-                # Check causal attention for each position in the block
+                # Prepare animations for the entire 2x2 block
+                block_animations = []
                 block_needed = False
+
+                # Check causal attention for each position in the block
                 for q_idx in range(q_start, q_end):
                     for k_idx in range(k_start, k_end):
                         can_attend = causal_attention(0, 0, q_idx, k_idx)
                         pos_idx = q_idx * seq_len + k_idx
 
+                        new_square = squares[pos_idx].copy()
                         if can_attend:
                             block_needed = True
-                            new_square = squares[pos_idx].copy()
                             new_square.set_fill(GREEN, opacity=0.7)
-                            self.play(
-                                Transform(squares[pos_idx], new_square), run_time=0.05
-                            )
                         else:
-                            new_square = squares[pos_idx].copy()
                             new_square.set_fill(RED, opacity=0.1)
-                            self.play(
-                                Transform(squares[pos_idx], new_square), run_time=0.05
-                            )
+
+                        block_animations.append(Transform(squares[pos_idx], new_square))
+
+                # Play all animations for the 2x2 block simultaneously
+                self.play(*block_animations, run_time=0.2)
 
                 if block_needed:
                     num_computed_blocks += 1
 
-                    # Update num_blocks matrix
-                    new_text = Text(str(num_computed_blocks), font_size=20)
-                    new_text.move_to(num_blocks_matrix[block_row][1].get_center())
-                    self.play(Transform(num_blocks_matrix[block_row][1], new_text))
+                    # Update matrices simultaneously
+                    updates = []
 
-                    # Update kv_indices matrix
-                    new_text = Text(str(block_col), font_size=20)
-                    new_text.move_to(
+                    # Update num_blocks
+                    new_num_text = Text(str(num_computed_blocks), font_size=20)
+                    new_num_text.move_to(num_blocks_matrix[block_row][1].get_center())
+                    updates.append(
+                        Transform(num_blocks_matrix[block_row][1], new_num_text)
+                    )
+
+                    # Update kv_indices
+                    new_idx_text = Text(str(block_col), font_size=20)
+                    new_idx_text.move_to(
                         kv_indices_matrix[block_row][block_col][1].get_center()
                     )
-                    self.play(
-                        Transform(kv_indices_matrix[block_row][block_col][1], new_text),
-                        run_time=0.2,
+                    updates.append(
+                        Transform(
+                            kv_indices_matrix[block_row][block_col][1], new_idx_text
+                        )
                     )
+
+                    self.play(*updates, run_time=0.2)
                 else:
-                    # Update kv_indices with dash for unused block
+                    # Update kv_indices with dash
                     new_text = Text("-", font_size=20)
                     new_text.move_to(
                         kv_indices_matrix[block_row][block_col][1].get_center()
@@ -360,9 +383,12 @@ class BlockMaskKVCreation(Scene):
                         run_time=0.2,
                     )
 
-            # Remove all highlights
+                # Remove column highlight after processing block
+                self.play(FadeOut(attention_highlight_col), run_time=0.2)
+
+            # Remove remaining highlights
             self.play(
-                FadeOut(attention_highlight),
+                FadeOut(attention_highlight_row),
                 FadeOut(num_blocks_highlight),
                 FadeOut(kv_indices_highlight),
             )
