@@ -3,6 +3,9 @@ media/
 *.DS_Store
 videos/
 .DS_Store
+*.pptx
+slides/
+*.mp4
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

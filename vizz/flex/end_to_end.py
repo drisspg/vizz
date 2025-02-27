@@ -1,7 +1,14 @@
+"""To run call manimgl vizz/flex/end_to_end.py AttentionScoresVisualization"""
+
 import torch
-from manimlib import *
-from manimlib.constants import FRAME_WIDTH
-from manimlib import Code
+# from manimlib import *
+# from manimlib.constants import FRAME_WIDTH
+# from manimlib import Code
+
+from manim import *
+# from manim.constants import FRAME_WIDTH
+
+from manim_slides import Slide
 
 
 def mask_mod(b, h, q_idx, kv_idx):
@@ -13,7 +20,7 @@ def matrix_center(group):
     return group[1].get_center()
 
 
-class AttentionScoresVisualization(Scene):
+class AttentionScoresVisualization(Slide):
     def highlight_dot_product(
         self, row_index, col_index, query_group, key_T_group, attention_group
     ):
@@ -61,6 +68,13 @@ class AttentionScoresVisualization(Scene):
         )
         self.play(FadeOut(cell_highlight))
 
+    def step(self):
+        # Check if the current class is a Slide
+        if isinstance(self, Slide):
+            self.next_slide()
+        else:
+            self.wait(1)
+
     def construct(self):
         # Step 1: Create query and key
         query = torch.arange(8).view(4, 2)
@@ -78,12 +92,13 @@ class AttentionScoresVisualization(Scene):
         initial_group = VGroup(query_group, key_group).arrange(RIGHT, buff=1).center()
 
         self.play(Write(initial_group))
-        self.wait(1)
+        self.step()
 
         # Step 2: Transpose key
         key_T = key.T
         key_T_matrix = Matrix(key_T.tolist())
-        key_T_label = Tex(r"Key^T").next_to(key_T_matrix, UP)
+        # key_T_label = Tex(r"Key^T").next_to(key_T_matrix, UP)
+        key_T_label = MathTex(r"\text{Key}^T").next_to(key_T_matrix, UP)
         key_T_group = VGroup(key_T_label, key_T_matrix)
 
         # Calculate the target positions
@@ -93,7 +108,7 @@ class AttentionScoresVisualization(Scene):
             query_group.animate.move_to(left_target),
             ReplacementTransform(key_group, key_T_group.move_to(right_target)),
         )
-        self.wait(1)
+        self.step()
 
         # Step 3: Matrix multiplication to produce attention scores
         attention_scores = torch.matmul(query, key_T)
@@ -118,9 +133,9 @@ class AttentionScoresVisualization(Scene):
             - 0.5 * RIGHT
         )
         equals.move_to(midpoint(matrix_center(equation[2]), matrix_center(equation[4])))
-        scale_factor = min(1, (FRAME_WIDTH - 1) / equation.get_width())
+        scale_factor = min(1, (config.frame_width - 1) / equation.get_width())
         # Scale and center the equation
-        scale_factor = min(1, (FRAME_WIDTH - 1) / equation.get_width())
+        scale_factor = min(1, (config.frame_width - 1) / equation.get_width())
         equation.scale(scale_factor).center()
 
         # Animate the transition smoothly
@@ -131,7 +146,7 @@ class AttentionScoresVisualization(Scene):
         )
         self.play(FadeIn(times), FadeIn(equals), FadeIn(attention_group), run_time=1)
         self.remove(query_group_copy, key_T_group_copy)
-        self.wait(1)
+        self.step()
 
         for row, col in [(0, 0), (2, 1)]:
             self.highlight_dot_product(
@@ -153,70 +168,71 @@ class AttentionScoresVisualization(Scene):
         # Add title for attention scores
         self.wait(1)
 
-        # Initial mask_mod_text setup
-        b, h, q_idx, kv_idx = "b", "h", "q_idx", "kv_idx"
-        code_string = """
-        def mask_mod({b}, {h}, {q_idx}, {kv_idx}):
-            return {q_idx} >= {kv_idx}
-        """
-        mask_mod_text = Code(
-            code=code_string.format(b=b, h=h, q_idx=q_idx, kv_idx=kv_idx),
-            language="python",
-            font="Monospace",
-            font_size=24,
-            # insert_line_no=False,
-        )
-        mask_mod_text.to_edge(DOWN, buff=0.5)
+        # # Initial mask_mod_text setup
+        # b, h, q_idx, kv_idx = "b", "h", "q_idx", "kv_idx"
+        # code_string = """
+        # def mask_mod({b}, {h}, {q_idx}, {kv_idx}):
+        #     return {q_idx} >= {kv_idx}
+        # """
+        # mask_mod_text = Code(
+        #     code_string = code_string.format(b=b, h=h, q_idx=q_idx, kv_idx=kv_idx),
+        #     language="python",
+        #     add_line_numbers=False,
 
-        # Display initial setup
-        self.play(Write(mask_mod_text))
-        self.wait(1)
+        #     paragraph_config={"font": "Monospace"},
+        # )
 
-        # Apply mask_mod function
-        for i in range(4):
-            for j in range(4):
-                b, h, q_idx, kv_idx = 0, 0, i, j
-                new_call_code = code_string.format(b=b, h=h, q_idx=q_idx, kv_idx=kv_idx)
-                new_call_text = Code(
-                    code=new_call_code,
-                    language="python",
-                    font="Monospace",
-                    font_size=24,
-                    # insert_line_no=False,
-                ).to_edge(DOWN, buff=0.5)
+        # mask_mod_text.to_edge(DOWN, buff=0.5)
 
-                if mask_mod(0, 0, i, j):
-                    color = GREEN
-                    new_value = attention_group[1].get_entries()[i * 4 + j].copy()
-                    output_text = Text("Keep", font_size=20, color=GREEN)
-                else:
-                    color = RED
-                    new_value = Text("-inf", font_size=24, color=RED).move_to(
-                        attention_group[1].get_entries()[i * 4 + j]
-                    )
-                    output_text = Text("Mask", font_size=20, color=RED)
+        # # Display initial setup
+        # self.play(Write(mask_mod_text))
+        # self.step()
 
-                output_text.next_to(mask_mod_text, UP, buff=0.2)
-                new_value.set_color(color)
+        # # Apply mask_mod function
+        # for i in range(4):
+        #     for j in range(4):
+        #         b, h, q_idx, kv_idx = 0, 0, i, j
+        #         new_call_code = code_string.format(b=b, h=h, q_idx=q_idx, kv_idx=kv_idx)
+        #         new_call_text = Code(
+        #             code_string=new_call_code,
+        #             language="python",
+        #             paragraph_config={"font": "Monospace"},
+        #             add_line_numbers=False
+        #         ).to_edge(DOWN, buff=0.5)
 
-                self.play(
-                    Transform(mask_mod_text, new_call_text),
-                    Flash(
-                        attention_group[1].get_entries()[i * 4 + j],
-                        color=color,
-                        flash_radius=0.3,
-                    ),
-                    Transform(attention_group[1].get_entries()[i * 4 + j], new_value),
-                    FadeIn(output_text),
-                    run_time=0.3,  # Reduced run_time
-                )
-                self.wait(0.1)  # Reduced wait time
-                self.play(
-                    FadeOut(output_text), run_time=0.2
-                )  # Reduced run_time for FadeOut
+        #         if mask_mod(0, 0, i, j):
+        #             color = GREEN
+        #             new_value = attention_group[1].get_entries()[i * 4 + j].copy()
+        #             output_text = Text("Keep", font_size=20, color=GREEN)
+        #         else:
+        #             color = RED
+        #             new_value = Text("-inf", font_size=24, color=RED).move_to(
+        #                 attention_group[1].get_entries()[i * 4 + j]
+        #             )
+        #             output_text = Text("Mask", font_size=20, color=RED)
 
-        self.wait(1)  # Reduced final wait time
+        #         output_text.next_to(mask_mod_text, UP, buff=0.2)
+        #         new_value.set_color(color)
+
+        #         self.play(
+        #             Transform(mask_mod_text, new_call_text),
+        #             Flash(
+        #                 attention_group[1].get_entries()[i * 4 + j],
+        #                 color=color,
+        #                 flash_radius=0.3,
+        #             ),
+        #             Transform(attention_group[1].get_entries()[i * 4 + j], new_value),
+        #             FadeIn(output_text),
+        #             run_time=0.3,  # Reduced run_time
+        #         )
+        #         self.wait(0.1)  # Reduced wait time
+        #         self.play(
+        #             FadeOut(output_text), run_time=0.2
+        #         )  # Reduced run_time for FadeOut
+
+        # self.step()  # Reduced final wait time
 
 
 # To run this animation, use the command:
 # manim -pqh attention_scores_visualization.py AttentionScoresVisualization
+#  manim-slides render vizz/flex/end_to_end.py AttentionScoresVisualization
