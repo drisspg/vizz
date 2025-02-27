@@ -1,4 +1,5 @@
-from manimlib import *
+# from manimlib import *
+from manim import *
 from enum import Enum
 
 
@@ -218,11 +219,12 @@ class BlockMaskKVCreation(Scene):
 
         # Initial animation
         self.play(Write(title))
-        self.play(ShowCreation(attention_matrix))
+        self.play(Create(attention_matrix))
+        # self.play(ShowCreation(attention_matrix))
         self.play(
             Write(attention_title), Write(num_blocks_title), Write(kv_indices_title)
         )
-        self.play(ShowCreation(num_blocks_matrix), ShowCreation(kv_indices_matrix))
+        self.play(Create(num_blocks_matrix), Create(kv_indices_matrix))
         self.wait()
 
         # Process each query block row
@@ -266,9 +268,9 @@ class BlockMaskKVCreation(Scene):
 
             # Initial highlights for row
             self.play(
-                ShowCreation(attention_highlight_row),
-                ShowCreation(num_blocks_highlight),
-                ShowCreation(kv_indices_highlight),
+                Create(attention_highlight_row),
+                Create(num_blocks_highlight),
+                Create(kv_indices_highlight),
             )
 
             # Process each key block in the row
@@ -296,7 +298,7 @@ class BlockMaskKVCreation(Scene):
                 )
 
                 # Show column highlight
-                self.play(ShowCreation(attention_highlight_col), run_time=0.2)
+                self.play(Create(attention_highlight_col), run_time=0.2)
                 k_start = block_col * block_size
                 k_end = k_start + block_size
 

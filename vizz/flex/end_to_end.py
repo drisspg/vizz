@@ -153,20 +153,20 @@ class AttentionScoresVisualization(Slide):
                 row, col, query_group, key_T_group, attention_group
             )
 
-        # Focus on the attention_scores matrix
-        causal_attention_text = (
-            Text("Causal Attention", font_size=40).center().to_edge(UP)
-        )
-        self.play(
-            FadeOut(query_group),
-            FadeOut(key_T_group),
-            FadeOut(times),
-            FadeOut(equals),
-            Transform(attention_group[0], causal_attention_text),
-            attention_group[1].animate.scale(1.2).center(),
-        )
-        # Add title for attention scores
-        self.wait(1)
+        # # Focus on the attention_scores matrix
+        # causal_attention_text = (
+        #     Text("Causal Attention", font_size=40).center().to_edge(UP)
+        # )
+        # self.play(
+        #     FadeOut(query_group),
+        #     FadeOut(key_T_group),
+        #     FadeOut(times),
+        #     FadeOut(equals),
+        #     Transform(attention_group[0], causal_attention_text),
+        #     attention_group[1].animate.scale(1.2).center(),
+        # )
+        # # Add title for attention scores
+        # self.wait(1)
 
         # # Initial mask_mod_text setup
         # b, h, q_idx, kv_idx = "b", "h", "q_idx", "kv_idx"
@@ -234,5 +234,5 @@ class AttentionScoresVisualization(Slide):
 
 
 # To run this animation, use the command:
-# manim -pqh attention_scores_visualization.py AttentionScoresVisualization
+# manim -q k vizz/flex/end_to_end.py.py AttentionScoresVisualization
 #  manim-slides render vizz/flex/end_to_end.py AttentionScoresVisualization
