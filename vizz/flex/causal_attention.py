@@ -142,10 +142,9 @@ def mask_mod({b}, {h}, {q_idx}, {kv_idx}):
     return {q_idx} >= {kv_idx}
 """
         mask_mod_text = Code(
-            code=code_string.format(b=b, h=h, q_idx=q_idx, kv_idx=kv_idx),
+            code_string=code_string.format(b=b, h=h, q_idx=q_idx, kv_idx=kv_idx),
             language="python",
-            font="Monospace",
-            line_spacing=0.8,
+            add_line_numbers=False,
         ).to_edge(DOWN, buff=0.5)
 
         # Display initial code
@@ -158,10 +157,9 @@ def mask_mod({b}, {h}, {q_idx}, {kv_idx}):
                 b, h, q_idx, kv_idx = 0, 0, i, j
                 new_call_code = code_string.format(b=b, h=h, q_idx=q_idx, kv_idx=kv_idx)
                 new_call_text = Code(
-                    code=new_call_code,
+                    code_string=new_call_code,
                     language="python",
-                    font="Monospace",
-                    line_spacing=0.8,
+                    add_line_numbers=False,
                 ).to_edge(DOWN, buff=0.5)
 
                 # Apply masking logic
@@ -198,106 +196,6 @@ def mask_mod({b}, {h}, {q_idx}, {kv_idx}):
         # Return the updated elements
         return mask_mod_text, mask_explanation
 
-    def explain_softmax_with_masked_values(self, attention_group, mask_mod_text, mask_explanation):
-        """Explain how softmax works with masked values"""
-        softmax_title = Text("Softmax with Masking", font_size=36, color=COLORS["text"]).to_edge(UP)
-
-        softmax_formula = MathTex(
-            r"\text{softmax}(x_i) = \frac{e^{x_i}}{\sum_j e^{x_j}}",
-            color=COLORS["text"]
-        ).next_to(softmax_title, DOWN)
-
-        softmax_explanation = Text(
-            "When -∞ values are included, they become 0 after softmax",
-            font_size=24,
-            color=COLORS["text"]
-        ).next_to(softmax_formula, DOWN, buff=0.5)
-
-        # Transform to softmax slide
-        self.play(
-            Transform(attention_group[0], softmax_title),
-            FadeOut(mask_mod_text),
-            FadeOut(mask_explanation),
-            Write(softmax_formula),
-            Write(softmax_explanation),
-        )
-        self.advance_slide()
-
-        # Show masked softmax result
-        softmax_matrix = self.helper.create_matrix(
-            self.causal_softmax_scores, "Causal Attention Weights"
-        )
-
-        # Keep the formula and title, replace the matrix
-        self.play(
-            Transform(attention_group[1], softmax_matrix[1]),
-            FadeOut(softmax_explanation),
-            Transform(softmax_formula, softmax_matrix[0]),
-            run_time=1.5
-        )
-        self.advance_slide()
-
-        return softmax_formula
-
-    def final_comparison(self, attention_group, softmax_formula):
-        """Compare standard vs causal attention results"""
-        # Create value matrix
-        value_group = self.helper.create_matrix(self.value_data, "Value Matrix (V)").scale(0.75)
-
-        # Create standard output
-        standard_output = self.helper.create_matrix(self.output_rounded, "Standard Output").scale(0.75)
-
-        # Create causal output
-        causal_output = self.helper.create_matrix(self.causal_output_rounded, "Causal Output").scale(0.75)
-
-        # Create title for comparison
-        comparison_title = Text("Standard vs. Causal Attention", font_size=36, color=COLORS["text"]).to_edge(UP, buff=0.5)
-
-        # Arrange for side-by-side comparison
-        standard_group = VGroup(
-            Text("Standard Attention", font_size=24, color=COLORS["text"]),
-            standard_output[1]
-        ).arrange(DOWN)
-
-        causal_group = VGroup(
-            Text("Causal Attention", font_size=24, color=COLORS["text"]),
-            causal_output[1]
-        ).arrange(DOWN)
-
-        comparison = VGroup(standard_group, causal_group).arrange(RIGHT, buff=1.5).center()
-
-        # Transition to comparison view
-        self.play(
-            FadeOut(attention_group),
-            FadeOut(softmax_formula),
-            FadeIn(comparison_title),
-            run_time=1
-        )
-        self.play(FadeIn(comparison))
-        self.advance_slide()
-
-        # Add explanation text
-        explanation = Text(
-            "Causal attention ensures information flows only from past to future tokens",
-            font_size=24,
-            color=COLORS["text"]
-        ).next_to(comparison, DOWN, buff=0.75)
-
-        self.play(Write(explanation))
-        self.advance_slide()
-
-        # Final message
-        final_text = Text(
-            "Essential for autoregressive generation in language models!",
-            font_size=32,
-            color=COLORS["text"]
-        ).to_edge(DOWN, buff=1)
-
-        self.play(Write(final_text))
-        self.advance_slide()
-
-        return comparison_title, comparison, explanation, final_text
-
     def construct(self):
         """Main construct method that orchestrates the visualization"""
         self.setup()
@@ -310,9 +208,3 @@ def mask_mod({b}, {h}, {q_idx}, {kv_idx}):
 
         # Step 4: Apply causal mask
         mask_mod_text, mask_explanation = self.apply_causal_mask(attention_group)
-
-        # Step 5: Explain softmax with masked values
-        softmax_formula = self.explain_softmax_with_masked_values(attention_group, mask_mod_text, mask_explanation)
-
-        # Step 6: Compare standard vs causal attention results
-        comparison_title, comparison, explanation, final_text = self.final_comparison(attention_group, softmax_formula)
