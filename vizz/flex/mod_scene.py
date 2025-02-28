@@ -1,5 +1,27 @@
+
 import torch
-from manimlib import *
+from manim import *
+from manim_slides import Slide
+
+# Custom configuration to use a light theme for presentations
+config.background_color = WHITE
+
+# Constants for consistent styling
+COLORS = {
+    "text": BLACK,
+    "matrix": DARK_GRAY,
+    "bracket": DARK_GRAY,
+    "highlight": {
+        "query": GOLD_D,
+        "key": BLUE_D,
+        "result": GREEN_D,
+    }
+}
+
+OPACITY = {
+    "highlight": 0.2
+}
+
 
 
 def prefix_lm(b, h, q_idx, kv_idx):
