@@ -287,23 +287,3 @@ class ScoreModAttentionVisualization(Slide):
 
             # self.play(FadeOut(score_mod_text), FadeOut(mod_explanation))
             self.advance_slide()
-
-        # # Final conclusion
-        # conclusion_text = Text(
-        #     "FlexAttention provides a simple yet powerful API for customizing attention mechanisms",
-        #     font_size=32,
-        #     color=COLORS["text"]
-        # ).to_edge(UP)
-
-        # examples_text = Text(
-        #     "Applications: position weighting, pattern injection, specialized attention heads, etc.",
-        #     font_size=24,
-        #     color=COLORS["text"]
-        # ).next_to(conclusion_text, DOWN, buff=0.5)
-
-        # self.play(
-        #     FadeOut(score_mod_text),
-        #     FadeOut(mod_explanation),
-        #     FadeOut(attention_group),
-        # )
-        # self.advance_slide()
