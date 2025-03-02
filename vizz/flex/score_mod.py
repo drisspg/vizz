@@ -4,6 +4,8 @@ import torch
 from manim import *
 from manim_slides import Slide
 
+from enum import Enum
+
 # Custom configuration to use a light theme for presentations
 config.background_color = WHITE
 
@@ -16,12 +18,55 @@ COLORS = {
         "query": GOLD_D,
         "key": BLUE_D,
         "result": GREEN_D,
-        "modified": PURPLE_D
-    }
+        "modified": PURPLE_D,
+    },
 }
 
-OPACITY = {
-    "highlight": 0.2
+OPACITY = {"highlight": 0.2}
+
+standard_format = "score = {score}  # No modification"
+
+# Standard (No Modification)
+standard_format = """
+def score_mod(score={score}, b={b}, h={h}, q_idx={q_idx}, kv_idx={kv_idx}):
+    return {score}  # No modification
+"""
+
+# Position Scaled
+position_scaled_format = """
+def score_mod(score={score}, b={b}, h={h}, q_idx={q_idx}, kv_idx={kv_idx}):
+    distance = abs({q_idx} - {kv_idx})
+    scale_factor = 1.0 / (1.0 + distance * 0.5)
+    return {score} * scale_factor
+"""
+
+# Softcap
+softcap_format = """
+softcap = 20
+def score_mod(score={score}, b={b}, h={h}, q_idx={q_idx}, kv_idx={kv_idx}):
+    score = {score} / softcap
+    score = torch.tanh(score) * softcap
+    return score
+"""
+
+
+class Scores(Enum):
+    standard = "standard"
+    position_scaled = "position_scaled"
+    softcap = "softcap"
+
+
+score_to_string = {
+    Scores.standard: standard_format,
+    Scores.position_scaled: position_scaled_format,
+    Scores.softcap: softcap_format,
+}
+
+scores_to_func = {
+    Scores.standard: lambda score, b, h, q_idx, kv_idx: score,
+    Scores.position_scaled: lambda score, b, h, q_idx, kv_idx: score
+    * (1.0 / (1.0 + abs(q_idx - kv_idx) * 0.5)),
+    Scores.softcap: lambda score, b, h, q_idx, kv_idx: torch.tanh(score / 20) * 20,
 }
 
 
@@ -40,7 +85,9 @@ class MatrixHelper:
         matrix = Matrix(
             matrix_data,
             element_to_mobject_config={"color": COLORS["matrix"]},
-            bracket_config={"color": COLORS["bracket"]} if with_brackets else {"opacity": 0}
+            bracket_config={"color": COLORS["bracket"]}
+            if with_brackets
+            else {"opacity": 0},
         )
 
         if label_text:
@@ -90,24 +137,10 @@ class ScoreModAttentionVisualization(Slide):
         # 1. Standard attention (no modification)
         self.standard_scores = self.attention_scores.clone()
 
-        # 2. Position-based scaling (e.g., favoring nearby tokens)
-        self.position_scaled_scores = self.attention_scores.clone().float()
-        for i in range(4):
-            for j in range(4):
-                # Scale based on distance between tokens
-                distance = abs(i - j)
-                scale_factor = 1.0 / (1.0 + distance * 0.5)
-                self.position_scaled_scores[i, j] *= scale_factor
-
-        # 3. Fixed pattern (e.g., add bias to certain positions)
-        self.pattern_scores = self.attention_scores.clone().float()
-        bias_pattern = torch.tensor([
-            [2.0, 0.0, -1.0, -2.0],
-            [0.0, 2.0, 0.0, -1.0],
-            [-1.0, 0.0, 2.0, 0.0],
-            [-2.0, -1.0, 0.0, 2.0]
-        ])
-        self.pattern_scores += bias_pattern
+        # softcap attention
+        self.softcap_scores = self.attention_scores.clone()
+        self.softcap_scores = self.softcap_scores / 20
+        self.softcap_scores = torch.tanh(self.softcap_scores) * 20
 
         # Store the current score modification for animations
         self.current_scores = self.attention_scores.clone()
@@ -115,13 +148,6 @@ class ScoreModAttentionVisualization(Slide):
         # Value data for output computation
         self.value_data = torch.arange(8).reshape(4, 2) + 1
         self.value_data = self.value_data.to(torch.float32)
-
-        # Define score modification functions
-        self.score_mod_functions = {
-            "standard": lambda score, b, h, q_idx, kv_idx: score,
-            "position_scaled": lambda score, b, h, q_idx, kv_idx: score * (1.0 / (1.0 + abs(q_idx - kv_idx) * 0.5)),
-            "pattern": lambda score, b, h, q_idx, kv_idx: score + bias_pattern[q_idx][kv_idx]
-        }
 
         # Current score_mod function
         self.current_score_mod = "standard"
@@ -133,11 +159,13 @@ class ScoreModAttentionVisualization(Slide):
         else:
             self.wait(0.25)
 
-    def apply_score_mod(self, attention_group, mod_type):
+    def apply_score_mod(self, attention_group, mod_type: Scores):
         """Apply score modification to the attention scores"""
         # Update title based on modification type
-        title_text = f"{mod_type.replace('_', ' ').title()} Attention"
-        score_mod_title = Text(title_text, font_size=40, color=COLORS["text"]).to_edge(UP)
+        title_text = f"{str(mod_type.value).replace('_', ' ').title()} Attention"
+        score_mod_title = Text(title_text, font_size=34, color=COLORS["text"]).to_edge(
+            UP
+        )
 
         # Transform the title
         self.play(
@@ -147,109 +175,93 @@ class ScoreModAttentionVisualization(Slide):
 
         # Add explanation of score modification
         explanations = {
-            "standard": "Standard attention uses the raw attention scores without modification.",
-            "position_scaled": "Position-scaled attention reduces scores based on token distance, favoring nearby tokens.",
-            "pattern": "Pattern-based attention adds a fixed bias pattern to attention scores."
+            Scores.softcap: "Cap logits so that they don't get too large",
+            Scores.standard: "Standard attention uses the raw attention scores without modification.",
+            Scores.position_scaled: "Position-scaled attention reduces scores based on token distance, favoring nearby tokens.",
         }
 
         mod_explanation = Text(
-            explanations[mod_type],
-            font_size=24,
-            color=COLORS["text"]
-        ).next_to(score_mod_title, DOWN, buff=0.5)
+            explanations[mod_type], font_size=20, color=COLORS["text"]
+        ).next_to(score_mod_title, DOWN, buff=0.05)
 
         self.play(Write(mod_explanation))
         self.advance_slide()
 
-        # Create the score_mod function code display
-        if mod_type == "standard":
-            code_string = """
-def score_mod(score, b, h, q_idx, kv_idx):
-    return score  # No modification
-"""
-        elif mod_type == "position_scaled":
-            code_string = """
-def score_mod(score, b, h, q_idx, kv_idx):
-    distance = abs(q_idx - kv_idx)
-    scale_factor = 1.0 / (1.0 + distance * 0.5)
-    return score * scale_factor
-"""
-        else:  # pattern
-            code_string = """
-def score_mod(score, b, h, q_idx, kv_idx):
-    # Add position-specific bias
-    bias_pattern = [
-        [2.0, 0.0, -1.0, -2.0],
-        [0.0, 2.0, 0.0, -1.0],
-        [-1.0, 0.0, 2.0, 0.0],
-        [-2.0, -1.0, 0.0, 2.0]
-    ]
-    return score + bias_pattern[q_idx][kv_idx]
-"""
+        # Create the code string template
+        code_string = score_to_string[mod_type].format(
+            score="score", b="b", h="h", q_idx="q_idx", kv_idx="kv_idx"
+        )
 
+        # Position the code block below the matrix (reduced size to fit)
         score_mod_text = Code(
             code_string=code_string,
             language="python",
-            font="Monospace",
             add_line_numbers=False,
-            font_size=24
-        ).to_edge(DOWN, buff=0.5)
+            paragraph_config={"font_size": 16},
+        ).next_to(attention_group[1], DOWN)
 
         # Display initial code
         self.play(Write(score_mod_text))
         self.advance_slide()
 
         # Get the appropriate modified scores based on the mod_type
-        if mod_type == "standard":
+        if mod_type == Scores.standard:
             modified_scores = self.standard_scores
-        elif mod_type == "position_scaled":
+        elif mod_type == Scores.position_scaled:
             modified_scores = self.position_scaled_scores
-        else:  # pattern
-            modified_scores = self.pattern_scores
-
-        # Create a new matrix to show the modified scores
-        modified_matrix = self.helper.create_matrix(modified_scores, "Modified Scores")
-        modified_matrix.scale(1.2).center()
+        elif mod_type == Scores.softcap:
+            modified_scores = self.softcap_scores
 
         # Apply score_mod function to each position
         for i in range(4):
             for j in range(4):
                 b, h, q_idx, kv_idx = 0, 0, i, j
 
-                # Compute the specific modification for this cell
                 original_score = self.attention_scores[i, j].item()
+                # Create a new code block with the specific values
+                new_code_string = score_to_string[mod_type].format(
+                    score=original_score, b=b, h=h, q_idx=q_idx, kv_idx=kv_idx
+                )
+                new_call_text = Code(
+                    code_string=new_code_string,
+                    language="python",
+                    add_line_numbers=False,
+                    paragraph_config={"font_size": 16},
+                ).move_to(score_mod_text.get_center())
+
+                # Compute the modified score for this cell
                 modified_score = modified_scores[i, j].item()
 
                 # Highlight the current cell
+                current_cell = attention_group[1].get_entries()[i * 4 + j]
                 cell_rect = SurroundingRectangle(
-                    attention_group[1].get_entries()[i * 4 + j],
-                    color=COLORS["highlight"]["modified"],
-                    buff=0.05
+                    current_cell, color=COLORS["highlight"]["query"], buff=0.05
                 )
 
-                # Create text for original and modified values
-                original_text = Text(f"Original: {original_score}", font_size=20, color=COLORS["text"])
-                modified_text = Text(f"Modified: {modified_score:.2f}", font_size=20, color=COLORS["highlight"]["modified"])
-                value_texts = VGroup(original_text, modified_text).arrange(DOWN).next_to(score_mod_text, UP, buff=0.2)
-
-                # Show modification for this cell
+                # Show highlighting, update the code, and display the result
                 self.play(
-                    ShowCreation(cell_rect),
-                    FadeIn(value_texts),
-                    run_time=0.5
-                )
-                self.wait(0.2)
-                self.play(
-                    FadeOut(cell_rect),
-                    FadeOut(value_texts),
-                    run_time=0.3
+                    Transform(score_mod_text, new_call_text),
+                    Create(cell_rect),
+                    run_time=0.3,
                 )
 
-        # Show the full modified matrix
-        self.play(
-            Transform(attention_group[1], modified_matrix[1]),
-            run_time=1.5
-        )
+                # Replace the value in the matrix with the modified score
+                new_value = MathTex(f"{modified_score:.2f}", color=COLORS["matrix"])
+                new_value.move_to(current_cell.get_center())
+
+                self.play(
+                    Transform(current_cell, new_value),
+                    Flash(
+                        current_cell,
+                        color=COLORS["highlight"]["modified"],
+                        flash_radius=0.3,
+                    ),
+                    run_time=0.3,
+                )
+
+                # Clean up for the next iteration
+                self.play(FadeOut(cell_rect), run_time=0.2)
+
         self.advance_slide()
 
         # Return the updated elements
@@ -259,76 +271,39 @@ def score_mod(score, b, h, q_idx, kv_idx):
         """Main construct method that orchestrates the visualization"""
         self.setup()
 
-        # Title and introduction
-        title = Text("FlexAttention: Arbitrary Score Modifications", font_size=48, color=COLORS["text"]).to_edge(UP)
-        subtitle = Text("Visualizing how score_mod transforms attention", font_size=32, color=COLORS["text"]).next_to(title, DOWN)
-
-        self.play(Write(title), Write(subtitle))
-        self.advance_slide()
-
-        # Show the FlexAttention API
-        api_code = """
-# The FlexAttention API allows for arbitrary score modifications
-def score_mod(score: f32[], b: i32[], h: i32[], q_idx: i32[], kv_idx: i32[]):
-    return score  # By default, no modification (standard attention)
-
-# Applied to every attention score:
-for b in range(batch_size):
-    for h in range(num_heads):
-        for q_idx in range(sequence_length):
-            for kv_idx in range(sequence_length):
-                modified_scores[b, h, q_idx, kv_idx] = score_mod(
-                    scores[b, h, q_idx, kv_idx], b, h, q_idx, kv_idx
-                )
-"""
-
-        code_block = Code(
-            code_string=api_code,
-            language="python",
-            font="Monospace",
-            add_line_numbers=False,
-            font_size=24
-        ).center()
-
-        self.play(FadeOut(subtitle), FadeIn(code_block))
-        self.advance_slide()
-
-        # Clear introduction
-        self.play(FadeOut(title), FadeOut(code_block))
-
         # Start with original attention scores
-        attention_group = self.helper.create_matrix(self.attention_scores, "Standard Attention Scores")
-        attention_group.scale(1.2).center()
+        attention_group = self.helper.create_matrix(
+            self.attention_scores, "Standard Attention Scores"
+        )
+        attention_group.scale(1.2).to_edge(UP, buff=0.5)
         self.play(FadeIn(attention_group))
         self.advance_slide()
 
         # Apply different score_mod functions
-        for mod_type in ["standard", "position_scaled", "pattern"]:
-            score_mod_text, mod_explanation = self.apply_score_mod(attention_group, mod_type)
+        for mod_type in [Scores.softcap]:
+            score_mod_text, mod_explanation = self.apply_score_mod(
+                attention_group, mod_type
+            )
 
-            # Clear explanations before moving to next modification type
-            if mod_type != "pattern":  # Don't clear after the last one
-                self.play(FadeOut(score_mod_text), FadeOut(mod_explanation))
-                self.advance_slide()
+            # self.play(FadeOut(score_mod_text), FadeOut(mod_explanation))
+            self.advance_slide()
 
-        # Final conclusion
-        conclusion_text = Text(
-            "FlexAttention provides a simple yet powerful API for customizing attention mechanisms",
-            font_size=32,
-            color=COLORS["text"]
-        ).to_edge(UP)
+        # # Final conclusion
+        # conclusion_text = Text(
+        #     "FlexAttention provides a simple yet powerful API for customizing attention mechanisms",
+        #     font_size=32,
+        #     color=COLORS["text"]
+        # ).to_edge(UP)
 
-        examples_text = Text(
-            "Applications: position weighting, pattern injection, specialized attention heads, etc.",
-            font_size=24,
-            color=COLORS["text"]
-        ).next_to(conclusion_text, DOWN, buff=0.5)
+        # examples_text = Text(
+        #     "Applications: position weighting, pattern injection, specialized attention heads, etc.",
+        #     font_size=24,
+        #     color=COLORS["text"]
+        # ).next_to(conclusion_text, DOWN, buff=0.5)
 
-        self.play(
-            FadeOut(score_mod_text),
-            FadeOut(mod_explanation),
-            FadeOut(attention_group),
-            FadeIn(conclusion_text),
-            FadeIn(examples_text)
-        )
-        self.advance_slide()
+        # self.play(
+        #     FadeOut(score_mod_text),
+        #     FadeOut(mod_explanation),
+        #     FadeOut(attention_group),
+        # )
+        # self.advance_slide()
