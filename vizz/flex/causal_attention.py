@@ -12,17 +12,10 @@ COLORS = {
     "text": BLACK,
     "matrix": DARK_GRAY,
     "bracket": DARK_GRAY,
-    "highlight": {
-        "query": GOLD_D,
-        "key": BLUE_D,
-        "result": GREEN_D,
-        "masked": RED_D
-    }
+    "highlight": {"query": GOLD_D, "key": BLUE_D, "result": GREEN_D, "masked": RED_D},
 }
 
-OPACITY = {
-    "highlight": 0.2
-}
+OPACITY = {"highlight": 0.2}
 
 
 class MatrixHelper:
@@ -40,7 +33,9 @@ class MatrixHelper:
         matrix = Matrix(
             matrix_data,
             element_to_mobject_config={"color": COLORS["matrix"]},
-            bracket_config={"color": COLORS["bracket"]} if with_brackets else {"opacity": 0}
+            bracket_config={"color": COLORS["bracket"]}
+            if with_brackets
+            else {"opacity": 0},
         )
 
         if label_text:
@@ -88,9 +83,13 @@ class CausalAttentionVisualization(Slide):
 
         # Create masked attention scores (for causal attention)
         self.causal_mask = torch.triu(torch.ones(4, 4), diagonal=1) * -1e9
-        self.masked_attention_scores = self.attention_scores.clone().float() + self.causal_mask
+        self.masked_attention_scores = (
+            self.attention_scores.clone().float() + self.causal_mask
+        )
 
-        self.softmax_scores = torch.softmax(self.attention_scores.to(torch.float32), dim=1)
+        self.softmax_scores = torch.softmax(
+            self.attention_scores.to(torch.float32), dim=1
+        )
         self.causal_softmax_scores = torch.softmax(self.masked_attention_scores, dim=1)
 
         self.value_data = torch.arange(8).reshape(4, 2) + 1
@@ -117,7 +116,9 @@ class CausalAttentionVisualization(Slide):
     def apply_causal_mask(self, attention_group):
         """Apply causal mask to the attention scores"""
         # Focus on the attention_scores matrix with causal title
-        causal_attention_text = Text("Causal Attention", font_size=40, color=COLORS["text"]).to_edge(UP)
+        causal_attention_text = Text(
+            "Causal Attention", font_size=34, color=COLORS["text"]
+        ).to_edge(UP)
 
         # Since we're starting with the attention matrix, just transform the title
         self.play(
@@ -128,8 +129,8 @@ class CausalAttentionVisualization(Slide):
         # Add explanation of causal mask
         mask_explanation = Text(
             "In causal attention, tokens can only attend to tokens that came before them.",
-            font_size=24,
-            color=COLORS["text"]
+            font_size=20,
+            color=COLORS["text"],
         ).next_to(causal_attention_text, DOWN, buff=0.5)
 
         self.play(Write(mask_explanation))
@@ -145,7 +146,8 @@ def mask_mod({b}, {h}, {q_idx}, {kv_idx}):
             code_string=code_string.format(b=b, h=h, q_idx=q_idx, kv_idx=kv_idx),
             language="python",
             add_line_numbers=False,
-        ).to_edge(DOWN, buff=0.5)
+            paragraph_config={"font_size": 16},
+        ).next_to(attention_group[1], DOWN, buff=0.25)
 
         # Display initial code
         self.play(Write(mask_mod_text))
@@ -160,7 +162,8 @@ def mask_mod({b}, {h}, {q_idx}, {kv_idx}):
                     code_string=new_call_code,
                     language="python",
                     add_line_numbers=False,
-                ).to_edge(DOWN, buff=0.5)
+                    paragraph_config={"font_size": 16},
+                ).next_to(attention_group[1], DOWN, buff=0.25)
 
                 # Apply masking logic
                 if self.mask_mod(0, 0, i, j):
@@ -201,8 +204,10 @@ def mask_mod({b}, {h}, {q_idx}, {kv_idx}):
         self.setup()
 
         # Start directly with attention scores
-        attention_group = self.helper.create_matrix(self.attention_scores, "Attention Scores")
-        attention_group.scale(1.2).center()
+        attention_group = self.helper.create_matrix(
+            self.attention_scores, "Attention Scores"
+        )
+        attention_group.scale(1.2).to_edge(UP, buff=1.5)
         self.play(FadeIn(attention_group))
         self.advance_slide()
 

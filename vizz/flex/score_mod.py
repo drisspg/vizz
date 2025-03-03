@@ -275,7 +275,7 @@ class ScoreModAttentionVisualization(Slide):
         attention_group = self.helper.create_matrix(
             self.attention_scores, "Standard Attention Scores"
         )
-        attention_group.scale(1.2).to_edge(UP, buff=0.5)
+        attention_group.scale(1.2).to_edge(UP, buff=1.5)
         self.play(FadeIn(attention_group))
         self.advance_slide()
 
