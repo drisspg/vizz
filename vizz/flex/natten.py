@@ -720,3 +720,6 @@ class RasterizationComparison(Slide):
         self.play(FadeIn(title), FadeIn(legend), run_time=1.0)
 
         return attention_matrix, title, legend
+
+
+#  ORDER=morton manim -q l -o "natten_morton" vizz/flex/natten.py RasterizationComparison
