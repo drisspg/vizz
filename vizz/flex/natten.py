@@ -6,8 +6,10 @@ import torch
 import numpy as np
 from manim import *
 from manim_slides import Slide
+from manim import config
 from PIL import Image
 from attn_gym.masks.natten import morton_encode
+import os
 
 # Custom configuration to use a light theme for presentations
 config.background_color = WHITE
@@ -360,12 +362,9 @@ class NattenBasicVisualization(Slide):
 class RasterizationComparison(Slide):
     def setup(self):
         """Initialize grid and parameters"""
-        self.grid_size = 6  # 16x16 grid for visualization
-        self.window_size = 3  # 3x3 window
-        self.standard_helper = PixelGrid(
-            self.grid_size, pixel_size=0.3, with_values=False
-        )
-        self.morton_helper = PixelGrid(
+        self.grid_size = 6  # Grid size for visualization
+        self.window_size = 3  # Window size for attention
+        self.pixel_grid_helper = PixelGrid(
             self.grid_size, pixel_size=0.3, with_values=False
         )
 
@@ -376,11 +375,26 @@ class RasterizationComparison(Slide):
 
         # Keep the color channels (don't convert to grayscale)
         self.image_tensor = torch.tensor(img_array)
-
         print(f"Loaded image with shape: {self.image_tensor.shape}")
+
+        # Define available rasterization orders
+        self.rasterization_orders = {
+            "row_major": {
+                "label": "Row-Major Rasterization",
+                "path_func": self.pixel_grid_helper.get_row_major_path,
+            },
+            "morton": {
+                "label": "Morton Order (Z-curve)",
+                "path_func": self.pixel_grid_helper.get_morton_path,
+            },
+            # Add more rasterization orders here as needed
+        }
 
     def construct(self):
         """Create the main visualization"""
+        # Choose rasterization order here
+        rasterization_order = os.environ.get("ORDER", "row_major")
+
         # Create title
         title = Text(
             "Rasterization Patterns for NATTEN", font_size=36, color=COLORS["text"]
@@ -388,43 +402,103 @@ class RasterizationComparison(Slide):
         self.play(Write(title))
         self.next_slide()
 
-        # Create and display image grids side by side
-        standard_grid = self.standard_helper.create_grid(self.image_tensor)
-        morton_grid = self.morton_helper.create_grid(self.image_tensor)
-
-        standard_grid.scale(0.9).to_edge(LEFT, buff=1)
-        morton_grid.scale(0.9).to_edge(RIGHT, buff=1)
-
-        standard_label = Text(
-            "Row-Major Rasterization", font_size=22, color=COLORS["text"]
-        )
-        morton_label = Text(
-            "Morton Order (Z-curve)", font_size=22, color=COLORS["text"]
-        )
-
-        standard_label.next_to(standard_grid, UP, buff=0.25)
-        morton_label.next_to(morton_grid, UP, buff=0.25)
+        # Create the grid based on the selected rasterization order
+        grid_data = self.create_grid(rasterization_order)
+        grid = grid_data["grid"]
+        label = grid_data["label"]
+        path = grid_data["path"]
 
         self.play(
-            FadeIn(standard_grid),
-            FadeIn(morton_grid),
-            Write(standard_label),
-            Write(morton_label),
+            FadeIn(grid),
+            Write(label),
         )
         self.next_slide()
 
         # Generate traversal paths
-        row_major_path = self.standard_helper.get_row_major_path()
-        morton_path = self.morton_helper.get_morton_path()
-
-        self.create_1d_layout_transformation(standard_grid, row_major_path, LEFT)
-
-        self.create_1d_layout_transformation(morton_grid, morton_path, RIGHT)
+        self.play(FadeOut(title))
+        col_squares, col_labels, row_squares = self.create_1d_layout_transformation(
+            grid, path, LEFT, label=label
+        )
         self.next_slide()
 
-    def create_1d_layout_transformation(self, grid, path, side):
+        # Visualize the NATTEN attention pattern
+        attention_matrix, attention_title, attention_legend = (
+            self.visualize_natten_attention(
+                col_squares, row_squares, rasterization_order, col_labels
+            )
+        )
+        self.next_slide()
+
+        # Create text elements with different styles
+        header_text = Text(
+            "For image_size = 128x128\nwindow_size = 16x16\ntile_size = 128:",
+            font_size=20,
+            color=COLORS["text"],
+        )
+
+        if rasterization_order == "row_major":
+            sparsity_value = Text(
+                "86.72% blockwise sparsity",
+                font_size=20,
+                color=COLORS["text"],
+                weight=BOLD,
+            )
+        elif rasterization_order == "morton":
+            sparsity_value = Text(
+                "93.55% blockwise sparsity",
+                font_size=20,
+                color=COLORS["text"],
+                weight=BOLD,
+            )
+
+        # Group them together vertically
+        sparsity_info = VGroup(header_text, sparsity_value)
+        sparsity_info.arrange(DOWN, aligned_edge=LEFT)
+        sparsity_info.scale(0.8)  # Scale down the entire group if needed
+
+        # Position it under the legend
+        sparsity_info.next_to(attention_legend, DOWN, buff=0.5)
+
+        # Add it to the scene
+        self.play(FadeIn(sparsity_info))
+
+        self.next_slide()
+
+    def create_grid(self, rasterization_order):
         """
-        Transform a 2D grid to a 1D column layout based on the provided traversal path
+        Create a grid with the specified rasterization order
+
+        Parameters:
+        -----------
+        rasterization_order : str
+            The rasterization order to use
+
+        Returns:
+        --------
+        dict
+            Dictionary containing the grid, label, and path
+        """
+        if rasterization_order not in self.rasterization_orders:
+            raise ValueError(f"Unknown rasterization order: {rasterization_order}")
+
+        order_info = self.rasterization_orders[rasterization_order]
+
+        # Create the grid
+        grid = self.pixel_grid_helper.create_grid(self.image_tensor)
+        grid.scale(0.9).shift(UP)
+
+        # Create the label
+        label = Text(order_info["label"], font_size=22, color=COLORS["text"])
+        label.next_to(grid, UP, buff=0.25)
+
+        # Get the traversal path
+        path = order_info["path_func"]()
+
+        return {"grid": grid, "label": label, "path": path}
+
+    def create_1d_layout_transformation(self, grid, path, side, label):
+        """
+        Transform a 2D grid to both 1D column and row layouts based on the provided traversal path
 
         Parameters:
         -----------
@@ -432,104 +506,217 @@ class RasterizationComparison(Slide):
             The 2D grid of pixels
         path : list
             List of (row, col) coordinates in the desired traversal order
-        label_text : str
-            Label for the 1D layout
         side : np.ndarray or manim.constants
             Position anchor (LEFT or RIGHT) for placement
-        """
-        # Create a target 1D layout as a column
-        target_positions = {}
+        label : Text
+            Label for the original grid
 
+        Returns:
+        --------
+        tuple
+            Tuple containing (column_squares, column_labels, row_squares)
+        """
         # Get the original pixel squares from the grid
         original_squares = [square for square in grid if isinstance(square, Square)]
 
         # Create mapping from position to square
         position_to_square = {}
-        for i, square in enumerate(original_squares):
-            # We know each pixel grid has a mapping from (row, col) to square
-            # So we'll reverse-map by iterating through the pixel_map
-            pixel_map = (
-                self.standard_helper.pixel_map
-                if side is LEFT
-                else self.morton_helper.pixel_map
-            )
-            for pos, pixel in pixel_map.items():
-                if pixel == square:
-                    position_to_square[pos] = square
-                    break
+        for pos, pixel in self.pixel_grid_helper.pixel_map.items():
+            if pixel in original_squares:
+                position_to_square[pos] = pixel
 
-        # Calculate spacing based on pixel size
-        pixel_size = (
-            self.standard_helper.pixel_size
-            if side is LEFT
-            else self.morton_helper.pixel_size
-        )
-        spacing = pixel_size * 0.15  # Reduced spacing for smaller pixels
+        # Get pixel size
+        pixel_size = self.pixel_grid_helper.pixel_size
         smaller_scale = 0.4  # Scale factor to make pixels smaller
 
         # Position for the 1D column, offset to the side of the original grid
         column_x = 3 * side[0]  # Further to the side
-        column_top_y = 0  # Near the top of the screen
+        column_top_y = 3  # Near the top of the screen
 
-        # Create target positions for each square in the traversal order
+        # Create a VGroup to hold the transformed column squares
+        transformed_squares = VGroup()
+
+        # Add the squares in path order for the column
+        for pos in path:
+            if pos in position_to_square:
+                # Get the square and add a copy to our transformed group
+                square = position_to_square[pos]
+                square_copy = square.copy().scale(smaller_scale)
+                transformed_squares.add(square_copy)
+
+        # Arrange the squares in a vertical column with proper spacing
+        transformed_squares.arrange(
+            DOWN,
+            buff=pixel_size * 0.25,  # More consistent spacing based on pixel size
+            center=False,
+        )
+
+        # Position the column at the desired location
+        transformed_squares.move_to([column_x, column_top_y, 0], aligned_edge=UP)
+
+        # Create transforms from original squares to arranged copies
+        transforms = [FadeOut(label)]
         for i, pos in enumerate(path):
             if pos in position_to_square:
                 square = position_to_square[pos]
-                # Calculate target position in the column
-                target_pos = np.array([column_x, column_top_y - i * spacing, 0])
-                target_positions[square] = target_pos
+                target = transformed_squares[i]
+                transforms.append(square.animate.become(target))
 
-        # Create index labels for the flattened array
+        # Create index labels relative to the arranged squares
         index_labels = VGroup()
-        for i, pos in enumerate(path):
-            if pos in position_to_square:
-                label = Text(f"{i}", font_size=12, color=COLORS["text"])
-                label.move_to(
-                    [column_x - pixel_size * 1.5, column_top_y - i * spacing, 0]
-                )
-                index_labels.add(label)
-
-        # Now create the transformations for all squares
-        transforms = []
-        for square in original_squares:
-            if square in target_positions:
-                # Scale down the square and move it to the target position
-                transforms.append(
-                    square.animate.scale(smaller_scale).move_to(
-                        target_positions[square]
-                    )
-                )
+        for i, square in enumerate(transformed_squares):
+            label = Text(f"{i}", font_size=12, color=COLORS["text"])
+            label.next_to(square, LEFT, buff=pixel_size * 0.5)
+            index_labels.add(label)
 
         # Play the transformation animation
-        self.play(*transforms, run_time=2.5, rate_func=smooth)
+        self.play(*transforms, run_time=2, rate_func=smooth)
 
-        # # Show the indices
-        # self.play(Write(index_labels))
+        # Add the labels after the transformation is complete
+        self.play(FadeIn(index_labels))
 
-        # # Highlight the sequential accesses
-        # highlights = VGroup()
-        # for i in range(len(path) - 1):
-        #     pos = path[i]
-        #     next_pos = path[i + 1]
+        # Now create the row layout directly above the column
+        row_squares = VGroup()
 
-        #     if pos in position_to_square and next_pos in position_to_square:
-        #         current_square = position_to_square[pos]
-        #         next_square = position_to_square[next_pos]
+        # Create copies of the column squares for the row
+        for square in transformed_squares:
+            square_copy = square.copy()
+            row_squares.add(square_copy)
 
-        #         arrow = Arrow(
-        #             current_square.get_center(),
-        #             next_square.get_center(),
-        #             buff=0.1,
-        #             color=COLORS["highlight"]["path"],
-        #             max_tip_length_to_length_ratio=0.15,
-        #             stroke_width=2
-        #         )
-        #         highlights.add(arrow)
+        # Arrange the squares in a horizontal row with proper spacing
+        row_squares.arrange(RIGHT, buff=pixel_size * 0.25, center=False)
 
-        # # Display the first few arrows to show the access pattern
-        # first_few = highlights[:min(5, len(highlights))]
-        # self.play(ShowCreation(first_few), run_time=1.5)
-        # self.wait(0.5)
-        # self.play(FadeOut(first_few))
+        # Calculate row position precisely above the first column element
+        first_square = transformed_squares[0]
 
-        return index_labels
+        # Position the row so its leftmost element is directly above the first column element
+        row_squares.move_to(
+            first_square.get_left() + np.array([0, 1 * pixel_size, 0]),
+            aligned_edge=DOWN + LEFT,
+        )
+
+        self.play(FadeIn(row_squares), run_time=1)
+
+        return transformed_squares, index_labels, row_squares
+
+    def visualize_natten_attention(
+        self, col_squares, row_squares, rasterization_order, col_labels
+    ):
+        """
+        Visualize the NATTEN attention mask pattern using the row and column vectors
+
+        Parameters:
+        -----------
+        col_squares : VGroup
+            The column vector squares
+        row_squares : VGroup
+            The row vector squares
+        rasterization_order : str
+            The rasterization order being used
+
+        Returns:
+        --------
+        tuple
+            Tuple containing (attention_matrix, title, legend)
+        """
+        from attn_gym.masks.natten import generate_natten, generate_morton_natten
+
+        if rasterization_order == "row_major":
+            mask_func = generate_natten(
+                self.grid_size, self.grid_size, self.window_size, self.window_size
+            )
+        else:
+            mask_func = generate_morton_natten(
+                self.grid_size, self.grid_size, self.window_size, self.window_size
+            )
+        # Create a matrix to hold attention connections
+        attention_matrix = VGroup()
+
+        # Calculate pixel size based on existing squares
+        pixel_size = col_squares[0].width
+
+        # Create the background matrix of attention scores
+        for i in range(len(col_squares)):
+            row = VGroup()
+            for j in range(len(row_squares)):
+                # Create a square for each attention score position
+                square = Square(
+                    side_length=pixel_size,
+                    fill_opacity=0.8,
+                    stroke_width=1,
+                    stroke_color=COLORS["text"],
+                )
+
+                # Position the square in the grid
+                square.move_to(
+                    col_squares[i].get_center()
+                    + np.array(
+                        [
+                            row_squares[j].get_center()[0]
+                            - row_squares[0].get_center()[0],
+                            0,
+                            0,
+                        ]
+                    )
+                )
+                row.add(square)
+            attention_matrix.add(row)
+
+        # Color the attention matrix based on the NATTEN pattern
+        for i in range(len(col_squares)):
+            for j in range(len(row_squares)):
+                if mask_func(0, 0, torch.tensor(i), torch.tensor(j)):
+                    # Yellow for active connections (within kernel)
+                    attention_matrix[i][j].set_fill(YELLOW)
+                else:
+                    # Blue for masked out connections (outside kernel)
+                    attention_matrix[i][j].set_fill(BLUE)
+
+        # Create labels for better understanding
+        order_display_name = self.rasterization_orders[rasterization_order]["label"]
+        title = Text(
+            f"NATTEN Attention Pattern ({order_display_name})",
+            font_size=24,
+            color=COLORS["text"],
+        )
+        title.to_edge(UP)
+
+        legend = VGroup()
+
+        # Yellow box for active tokens
+        active_box = Square(
+            side_length=0.3,
+            fill_color=YELLOW,
+            fill_opacity=0.8,
+            stroke_color=COLORS["text"],
+        )
+        active_label = Text("Active tokens", font_size=16, color=COLORS["text"])
+        active_label.next_to(active_box, RIGHT, buff=0.2)
+        active_group = VGroup(active_box, active_label)
+
+        # Blue box for masked tokens
+        masked_box = Square(
+            side_length=0.3,
+            fill_color=BLUE,
+            fill_opacity=0.8,
+            stroke_color=COLORS["text"],
+        )
+        masked_label = Text("Masked tokens", font_size=16, color=COLORS["text"])
+        masked_label.next_to(masked_box, RIGHT, buff=0.2)
+        masked_group = VGroup(masked_box, masked_label)
+
+        # Arrange legend items
+        legend.add(active_group, masked_group)
+        legend.arrange(DOWN, aligned_edge=LEFT, buff=0.3)
+        legend.to_edge(RIGHT)
+
+        # Animate the appearance of the attention matrix
+        self.play(
+            FadeIn(attention_matrix),
+            FadeOut(col_squares),
+            FadeOut(row_squares),
+            FadeOut(col_labels),
+        )
+        self.play(FadeIn(title), FadeIn(legend), run_time=1.0)
+
+        return attention_matrix, title, legend
