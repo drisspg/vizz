@@ -12,7 +12,7 @@ import torch
 from manim import *
 from manim_slides import Slide
 
-from torchao.prototype.mx_formats.mx_tensor import to_mx
+from torchao.prototype.mx_formats.mx_tensor import to_mx, get_fp_scale
 from torchao.prototype.mx_formats.config import ScaleCalculationMode
 
 from vizz.quant.mx_base import COLORS
@@ -25,7 +25,7 @@ class MXBlockScaling(Slide):
         super().__init__(**kwargs)
 
         # Dimensions
-        self.num_rows = 2
+        self.num_rows = 4
         self.num_cols = 128
         self.block_size = 32
         self.num_blocks = self.num_cols // self.block_size
@@ -40,12 +40,12 @@ class MXBlockScaling(Slide):
         self.scale_matrix_scale = 0.5  # For E8M0 scales
 
         # Font sizes
-        self.matrix_font_size = 20
+        self.matrix_font_size = 14
         self.scale_font_size = 24
         self.subtitle_font_size = 18
 
         # Spacing
-        self.matrix_h_buff = 0.2
+        self.matrix_h_buff = 0.25
         self.matrix_v_buff = 0.4
         self.scale_h_buff = 1
         self.scale_v_buff = 1
@@ -93,8 +93,8 @@ class MXBlockScaling(Slide):
     def _setup_quantization_data(self):
         """Create tensors and run torchao quantization."""
         torch.manual_seed(42)
-        self.tensor_bf16 = (
-            torch.randn(self.num_rows, self.num_cols, dtype=torch.bfloat16) * 10
+        self.tensor_bf16 = torch.abs(
+            torch.randn(self.num_rows, self.num_cols, dtype=torch.bfloat16)
         )
 
         self.scales_e8m0, self.data_fp8 = to_mx(
@@ -130,7 +130,6 @@ class MXBlockScaling(Slide):
         # Scale to fit columns on screen
         matrix.scale(self.matrix_scale)
         matrix.move_to([0, self.bf16_y, 0])
-
         # Position subtitle above matrix
         subtitle = Text(
             f"BFloat16 Input [{self.num_rows}, {self.num_cols}]",
@@ -151,8 +150,13 @@ class MXBlockScaling(Slide):
     def _create_output_matrix(self):
         """Create FP8 output matrix scaffolding (empty placeholders)."""
         # Create DecimalMatrix with actual values (will be hidden initially)
+        data = self.data_fp8.to(torch.float32)
+        scales_fp32 = get_fp_scale(self.scales_e8m0)
+        fp_8_data = (
+            (data * scales_fp32.repeat_interleave(self.block_size, dim=1)).cpu().numpy()
+        )
         matrix = DecimalMatrix(
-            self.data_fp8.to(torch.float32).cpu().numpy(),
+            fp_8_data,
             element_to_mobject_config={
                 "num_decimal_places": 1,
                 "font_size": self.matrix_font_size,
