@@ -6,20 +6,24 @@ from manim_slides import Slide
 # Light theme configuration
 config.background_color = WHITE
 
-# Color scheme
+# PyTorch-themed color scheme
 COLORS = {
-    "text": BLACK,
-    "matrix": DARK_GRAY,
-    "block_boundary": GRAY,
-    "active_block": YELLOW_E,
-    "computed_scale": GREEN_D,
-    "max_value": RED_D,
-    "tensor_data": BLUE_D,
-    "mx_color": PURPLE_D,
-    "nvfp_color": ORANGE,
-    "packed_data": TEAL_D,
-    "bf16_color": BLUE_C,
-    "fp8_color": ORANGE,
+    "text": "#262626",  # Dark gray (almost black)
+    "matrix": "#525252",  # Medium gray
+    "block_boundary": "#8C8C8C",  # Light gray
+    "active_block": "#EE4C2C",  # PyTorch orange
+    "computed_scale": "#F05732",  # Lighter orange/coral
+    "max_value": "#C72C1C",  # Dark red-orange
+    "tensor_data": "#FF8C42",  # Warm orange
+    "mx_color": "#E65100",  # Deep orange
+    "nvfp_color": "#FF6E40",  # Bright orange
+    "packed_data": "#FFB74D",  # Light orange/amber
+    "bf16_color": "#EE4C2C",  # PyTorch orange for input
+    "fp8_color": "#8B5CF6",  # Purple for output
+    # Distinct colors for quantization granularities
+    "per_tensor_color": "#2563EB",  # Blue - simplest, most global
+    "per_row_color": "#F59E0B",  # Amber - middle granularity
+    "per_block_color": "#8B5CF6",  # Purple - finest granularity
 }
 
 # Layout configuration
