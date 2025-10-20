@@ -136,9 +136,6 @@ class UnifiedFPQuantization(Slide):
         self._show_quantization_process(input_entries)
         self.next_slide()
 
-        # Final fade out
-        self.play(*[FadeOut(mob) for mob in self.mobjects], run_time=1.0)
-
     def _create_title(self):
         """Create title with configuration."""
         main_title = Text(
