@@ -117,7 +117,6 @@ class UnifiedFPQuantization(Slide):
         # Title
         title = self._create_title()
         self.play(Write(title))
-        self.next_slide()
 
         # Show input matrix
         input_matrix, input_entries, input_subtitle = self._create_input_matrix()
@@ -191,6 +190,7 @@ class UnifiedFPQuantization(Slide):
     def _create_input_matrix(self):
         """Create BF16 input matrix."""
         matrix_data = self.tensor_bf16.to(torch.float32).cpu().numpy()
+        self.original_matrix_data = matrix_data.copy()
 
         matrix = DecimalMatrix(
             matrix_data,
@@ -224,6 +224,75 @@ class UnifiedFPQuantization(Slide):
 
         entries = matrix.get_entries()
         return matrix, entries, subtitle
+
+    def _cast_to_target_dtype(self, quantized_data):
+        """Cast quantized FP32 data to target dtype and back for display."""
+        if self.target_dtype == "fp8":
+            # Cast to FP8 E4M3 and back
+            cast_data = quantized_data.to(torch.float8_e4m3fn).to(torch.float32)
+        elif self.target_dtype == "fp4":
+            # For FP4, we would need special handling, for now just simulate
+            # by further quantizing the values
+            cast_data = torch.round(quantized_data * 2) / 2
+        else:
+            cast_data = quantized_data
+        return cast_data
+
+    def _reset_matrix_entries(self, input_entries):
+        """Reset the input matrix entries back to the original BF16 values."""
+        reset_animations = []
+        for idx, entry in enumerate(input_entries):
+            row = idx // self.num_cols
+            col = idx % self.num_cols
+            original_value = float(self.original_matrix_data[row, col])
+            original_text = DecimalNumber(
+                original_value,
+                num_decimal_places=1,
+                font_size=self.matrix_font_size,
+                color=COLORS["text"],
+            )
+            original_text.move_to(entry.get_center())
+            reset_animations.append(Transform(entry, original_text))
+
+        if reset_animations:
+            self.play(*reset_animations, run_time=0.6)
+            self.wait(0.2)
+            self.play(
+                Indicate(
+                    VGroup(*input_entries),
+                    color=COLORS["bf16_color"],
+                    scale_factor=1.03,
+                    run_time=0.4,
+                )
+            )
+
+    def _morph_matrix_to_values(
+        self,
+        matrix: DecimalMatrix,
+        values: torch.Tensor,
+        num_decimal_places: int,
+    ):
+        """Morph an existing DecimalMatrix to show new numeric values."""
+        target_numpy = values.to(torch.float32).cpu().numpy()
+        entries = matrix.get_entries()
+
+        animations = []
+        rows, cols = target_numpy.shape
+        for idx, entry in enumerate(entries):
+            row = idx // cols
+            col = idx % cols
+            new_value = float(target_numpy[row, col])
+            new_text = DecimalNumber(
+                new_value,
+                num_decimal_places=num_decimal_places,
+                font_size=self.matrix_font_size,
+                color=COLORS["text"],
+            )
+            new_text.move_to(entry.get_center())
+            animations.append(Transform(entry, new_text))
+
+        if animations:
+            self.play(*animations, run_time=1.0)
 
     def _show_amax_calculation(self, input_entries):
         """Show amax calculation for all three granularity types with a comparison table."""
@@ -676,91 +745,79 @@ class UnifiedFPQuantization(Slide):
             self.amax_per_block, "e8m0", self.target_max, self.target_max_pow2
         )
 
-        # Create new scale value displays to morph into
-        # 1. Per Tensor - create new 1x1 matrix (FP32 method)
-        scale_tensor_data = scales_per_tensor.cpu().numpy()
-        new_per_tensor_matrix = DecimalMatrix(
-            scale_tensor_data,
-            element_to_mobject_config={
-                "num_decimal_places": 3,
-                "font_size": self.matrix_font_size,
-            },
-            left_bracket="[",
-            right_bracket="]",
-            bracket_config={"color": COLORS["computed_scale"]},
-            h_buff=self.matrix_h_buff,
-            v_buff=self.matrix_v_buff,
+        # Replace formula constants with the actual numeric values being used
+        target_max_display = (
+            f"{int(self.target_max)}"
+            if float(self.target_max).is_integer()
+            else f"{self.target_max:.2f}"
         )
-        new_per_tensor_matrix.scale(self.matrix_scale)
-        new_per_tensor_matrix.move_to(self.per_tensor_matrix.get_center())
-        for entry in new_per_tensor_matrix.get_entries():
-            entry.set_color(COLORS["text"])
+        target_max_pow2_value = 2 ** int(self.target_max_pow2)
+        target_max_pow2_display = f"{target_max_pow2_value}"
 
-        # 2. Per Row - create new matrix (FP32 method)
-        scale_row_data = scales_per_row.cpu().numpy()
-        new_per_row_matrix = DecimalMatrix(
-            scale_row_data,
-            element_to_mobject_config={
-                "num_decimal_places": 3,
-                "font_size": self.matrix_font_size,
-            },
-            left_bracket="[",
-            right_bracket="]",
-            bracket_config={"color": COLORS["computed_scale"]},
-            h_buff=self.matrix_h_buff,
-            v_buff=self.matrix_v_buff,
+        numeric_per_tensor_math = MathTex(
+            rf"\frac{{{target_max_display}}}{{\text{{amax}}}}",
+            font_size=12,
+            color=COLORS["text"],
         )
-        new_per_row_matrix.scale(self.matrix_scale)
-        new_per_row_matrix.move_to(self.per_row_matrix.get_center())
-        for entry in new_per_row_matrix.get_entries():
-            entry.set_color(COLORS["text"])
+        numeric_per_tensor_math.move_to(formula_per_tensor[1])
 
-        # 3. Per Block - create new matrix (E8M0 method - MX format)
-        scale_block_data = scales_per_block.cpu().numpy()
-        new_per_block_matrix = DecimalMatrix(
-            scale_block_data,
-            element_to_mobject_config={
-                "num_decimal_places": 3,
-                "font_size": self.matrix_font_size,
-            },
-            left_bracket="[",
-            right_bracket="]",
-            bracket_config={"color": COLORS["computed_scale"]},
-            h_buff=self.matrix_h_buff + 0.4,
-            v_buff=self.matrix_v_buff,
+        numeric_per_row_math = MathTex(
+            rf"\frac{{{target_max_display}}}{{\text{{amax}}}}",
+            font_size=12,
+            color=COLORS["text"],
         )
-        new_per_block_matrix.scale(self.matrix_scale)
-        new_per_block_matrix.move_to(self.per_block_matrix.get_center())
-        for entry in new_per_block_matrix.get_entries():
-            entry.set_color(COLORS["text"])
+        numeric_per_row_math.move_to(formula_per_row[1])
 
-        # Transform all three simultaneously
+        numeric_per_block_math = MathTex(
+            rf"\frac{{{target_max_pow2_display}}}{{\text{{pow2(amax)}}}}",
+            font_size=11,
+            color=COLORS["text"],
+        )
+        numeric_per_block_math.move_to(formula_per_block[1])
+
         self.play(
-            Transform(self.per_tensor_matrix, new_per_tensor_matrix),
-            Transform(self.per_row_matrix, new_per_row_matrix),
-            Transform(self.per_block_matrix, new_per_block_matrix),
-            run_time=1.5,
+            Transform(formula_per_tensor[1], numeric_per_tensor_math),
+            Transform(formula_per_row[1], numeric_per_row_math),
+            Transform(formula_per_block[1], numeric_per_block_math),
+            run_time=0.8,
         )
-        self.wait(1.0)
+
+        # Morph existing placeholders into real scale values
+        self._morph_matrix_to_values(
+            self.per_tensor_matrix, scales_per_tensor, num_decimal_places=3
+        )
+        self._morph_matrix_to_values(
+            self.per_row_matrix, scales_per_row, num_decimal_places=3
+        )
+        self._morph_matrix_to_values(
+            self.per_block_matrix, scales_per_block, num_decimal_places=3
+        )
+        self.wait(0.8)
 
         # Fade out the header and formulas
         self.play(FadeOut(self.amax_header), FadeOut(self.scale_formulas), run_time=0.5)
 
     def _show_quantization_process(self, input_entries):
         """Show the quantization process for all three granularity types."""
-        # Show quantization formula in the middle
-        quant_formula = Text(
-            "Scale and quantize: torch.clamp(inputTensor * scale).to(torch.float8_e4m3)",
-            font_size=16,
-            color=self.target_color,
-            weight=BOLD,
-        )
-        quant_formula.move_to([0, 0.0, 0])  # Middle position between matrix and table
-        self.play(Write(quant_formula), run_time=0.8)
+        # Show quantization formula with separate parts for underlining
+        formula_parts = VGroup(
+            Text("Quantize: ", font_size=16, color=self.target_color, weight=BOLD),
+            Text("clamp(", font_size=16, color=self.target_color),
+            Text("inputTensor * scale", font_size=16, color=self.target_color),
+            Text(", -max, max)", font_size=16, color=self.target_color),
+            Text(".to(", font_size=16, color=self.target_color),
+            Text(self.target_name, font_size=16, color=self.target_color, weight=BOLD),
+            Text(")", font_size=16, color=self.target_color),
+        ).arrange(RIGHT, buff=0.05)
+        formula_parts.move_to([0, 0.0, 0])
+
+        self.play(Write(formula_parts), run_time=0.8)
         self.wait(0.5)
 
-        # Store for later fadeout
-        self.quant_formula = quant_formula
+        # Store for later fadeout and underlining
+        self.quant_formula = formula_parts
+        self.scale_multiply_part = VGroup(formula_parts[1], formula_parts[2], formula_parts[3])
+        self.cast_part = VGroup(formula_parts[4], formula_parts[5], formula_parts[6])
 
         # Prepare quantized data for all three types
         # Per tensor
@@ -809,6 +866,8 @@ class UnifiedFPQuantization(Slide):
             input_entries,
             highlight_color=COLORS["per_tensor_color"],
         )
+        self.wait(0.4)
+        self._reset_matrix_entries(input_entries)
         self.next_slide()
 
         self._quantize_with_granularity(
@@ -817,6 +876,8 @@ class UnifiedFPQuantization(Slide):
             input_entries,
             highlight_color=COLORS["per_row_color"],
         )
+        self.wait(0.4)
+        self._reset_matrix_entries(input_entries)
         self.next_slide()
 
         self._quantize_with_granularity(
@@ -834,6 +895,10 @@ class UnifiedFPQuantization(Slide):
         self, granularity_type, quantized_data, input_entries, highlight_color
     ):
         """Apply quantization for one granularity type with highlighting."""
+        # Step 1: Add underline to the scale multiplication part
+        scale_underline = Underline(self.scale_multiply_part, color=highlight_color, stroke_width=3)
+        self.play(Create(scale_underline), run_time=0.5)
+
         if granularity_type == "per_tensor":
             # Get per_tensor matrix entry for highlighting
             per_tensor_scale_entry = self.per_tensor_matrix.get_entries()[0]
@@ -881,7 +946,7 @@ class UnifiedFPQuantization(Slide):
             self.play(*spread_animations, run_time=0.6)
             self.wait(0.2)
 
-            # Morph all values to quantized
+            # Step 2: Morph to scaled and clamped values
             new_matrix_data = quantized_data.cpu().numpy()
             animations = []
             for idx, entry in enumerate(input_entries):
@@ -900,6 +965,39 @@ class UnifiedFPQuantization(Slide):
             animations.append(FadeOut(spread_copies))
             self.play(*animations, run_time=1.5)
             self.play(FadeOut(scale_highlight), FadeOut(data_highlight), run_time=0.3)
+
+            # Step 3: Switch underline to cast part
+            self.play(FadeOut(scale_underline), run_time=0.3)
+            cast_underline = Underline(self.cast_part, color=self.target_color, stroke_width=3)
+            self.play(Create(cast_underline), run_time=0.5)
+
+            # Step 4: Cast to target dtype and show the result
+            cast_data = self._cast_to_target_dtype(quantized_data)
+            cast_matrix_data = cast_data.cpu().numpy()
+
+            cast_animations = []
+            for idx, entry in enumerate(input_entries):
+                row = idx // self.num_cols
+                col = idx % self.num_cols
+                cast_val = cast_matrix_data[row, col]
+                cast_text = DecimalNumber(
+                    cast_val,
+                    num_decimal_places=1,
+                    font_size=self.matrix_font_size,
+                    color=self.target_color,
+                )
+                cast_text.move_to(entry.get_center())
+                cast_animations.append(Transform(entry, cast_text))
+
+            # Flash the matrix to indicate casting
+            self.play(
+                *cast_animations,
+                Flash(all_entries, color=self.target_color, flash_radius=1.2),
+                run_time=1.0
+            )
+
+            # Remove cast underline
+            self.play(FadeOut(cast_underline), run_time=0.3)
 
         elif granularity_type == "per_row":
             # Get per_row matrix entries for highlighting individual scales
@@ -1010,6 +1108,40 @@ class UnifiedFPQuantization(Slide):
             morph_animations.append(FadeOut(all_spread_copies))
             self.play(*morph_animations, run_time=1.5)
             self.play(FadeOut(scale_highlights), FadeOut(row_highlights), run_time=0.3)
+
+            # Step 3: Switch underline to cast part
+            self.play(FadeOut(scale_underline), run_time=0.3)
+            cast_underline = Underline(self.cast_part, color=self.target_color, stroke_width=3)
+            self.play(Create(cast_underline), run_time=0.5)
+
+            # Step 4: Cast to target dtype and show the result
+            cast_data = self._cast_to_target_dtype(quantized_data)
+            cast_matrix_data = cast_data.cpu().numpy()
+
+            cast_animations = []
+            for idx, entry in enumerate(input_entries):
+                row = idx // self.num_cols
+                col = idx % self.num_cols
+                cast_val = cast_matrix_data[row, col]
+                cast_text = DecimalNumber(
+                    cast_val,
+                    num_decimal_places=1,
+                    font_size=self.matrix_font_size,
+                    color=self.target_color,
+                )
+                cast_text.move_to(entry.get_center())
+                cast_animations.append(Transform(entry, cast_text))
+
+            # Flash the matrix to indicate casting
+            all_entries = VGroup(*input_entries)
+            self.play(
+                *cast_animations,
+                Flash(all_entries, color=self.target_color, flash_radius=1.2),
+                run_time=1.0
+            )
+
+            # Remove cast underline
+            self.play(FadeOut(cast_underline), run_time=0.3)
 
         else:  # per_block
             # Get per_block matrix entries for highlighting individual scales
@@ -1138,3 +1270,37 @@ class UnifiedFPQuantization(Slide):
             self.play(
                 FadeOut(scale_highlights), FadeOut(block_highlights), run_time=0.3
             )
+
+            # Step 3: Switch underline to cast part
+            self.play(FadeOut(scale_underline), run_time=0.3)
+            cast_underline = Underline(self.cast_part, color=self.target_color, stroke_width=3)
+            self.play(Create(cast_underline), run_time=0.5)
+
+            # Step 4: Cast to target dtype and show the result
+            cast_data = self._cast_to_target_dtype(quantized_data)
+            cast_matrix_data = cast_data.cpu().numpy()
+
+            cast_animations = []
+            for idx, entry in enumerate(input_entries):
+                row = idx // self.num_cols
+                col = idx % self.num_cols
+                cast_val = cast_matrix_data[row, col]
+                cast_text = DecimalNumber(
+                    cast_val,
+                    num_decimal_places=1,
+                    font_size=self.matrix_font_size,
+                    color=self.target_color,
+                )
+                cast_text.move_to(entry.get_center())
+                cast_animations.append(Transform(entry, cast_text))
+
+            # Flash the matrix to indicate casting
+            all_entries = VGroup(*input_entries)
+            self.play(
+                *cast_animations,
+                Flash(all_entries, color=self.target_color, flash_radius=1.2),
+                run_time=1.0
+            )
+
+            # Remove cast underline
+            self.play(FadeOut(cast_underline), run_time=0.3)
