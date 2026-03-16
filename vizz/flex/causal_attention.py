@@ -1,4 +1,4 @@
-"""To run call manimgl vizz/flex/causal_attention.py CausalAttentionVisualization"""
+"""To run call manim vizz/flex/causal_attention.py CausalAttentionVisualization"""
 
 import torch
 from manim import *
