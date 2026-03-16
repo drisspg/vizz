@@ -1,5 +1,5 @@
 """
-To run call: manimgl natten_visualization.py RasterizationComparison
+To run call: manim natten_visualization.py RasterizationComparison
 """
 
 import torch

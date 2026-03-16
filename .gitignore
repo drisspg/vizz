@@ -4,7 +4,7 @@ media/
 videos/
 .DS_Store
 *.pptx
-slides/
+/slides/
 *.mp4
 
 # Byte-compiled / optimized / DLL files

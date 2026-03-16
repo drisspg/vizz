@@ -1,4 +1,4 @@
-"""To run call manimgl vizz/flex/score_mod_attention.py ScoreModAttentionVisualization"""
+"""To run call manim vizz/flex/score_mod_attention.py ScoreModAttentionVisualization"""
 
 import torch
 from manim import *
