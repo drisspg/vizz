@@ -1,5 +1,5 @@
 """
-To run call: manimgl ordering_comparison.py OrderingPatterns
+To run call: manim ordering_comparison.py OrderingPatterns
 """
 
 import torch

@@ -280,4 +280,4 @@ class MaskAnimationScene(Slide):
 
 
 # To run this animation, use the command:
-# manimgl your_file_name.py MaskAnimationScene
+# manim your_file_name.py MaskAnimationScene

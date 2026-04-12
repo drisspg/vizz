@@ -7,118 +7,112 @@ Collection of math visualizations using Manim and Manim-Slides for interactive p
 ```
 vizz/
 ├── flex/       # Animations for FlexAttention
-└── quant/      # Quant Animations
+└── quant/      # Quant animations
 ```
 
-## Installation
+## Setup
 
-1. Install the package in development mode:
-```bash
-pip install -e .
-```
-
-2. Install manim-slides for presentation functionality:
-```bash
-pip install manim-slides
-```
-
-### macOS Dependencies
-
-You can install the required system dependencies using Homebrew:
-
+1. Install macOS system dependencies:
 ```bash
 brew install ffmpeg mactex
 ```
 
+2. Sync the project environment with `uv`:
+```bash
+uv sync
+```
+
+This project is meant to be run with `uv run ...`, not a manually activated Conda environment.
+
+3. Point Git at the repo-managed hooks:
+```bash
+git config core.hooksPath .githooks
+```
+
+Pre-commit hooks in this repo are expected to run through `uv run prek`.
+
 ## Usage
 
-This project uses both **ManimGL** for animations and **manim-slides** for interactive presentations.
+This project uses both **Manim** for animations and **manim-slides** for interactive presentations.
 
-### Running Animations
-
-#### Basic Animation Rendering
+### Running animations
 
 For standard animations without slide functionality:
 
 ```bash
-manimgl file.py SceneName
+uv run manim file.py SceneName
 ```
 
 Example:
+
 ```bash
-manimgl vizz/flex/end_to_end.py AttentionScoresVisualization
+uv run manim vizz/flex/end_to_end.py AttentionScoresVisualization
 ```
 
-#### Creating Interactive Slides
+### Creating interactive slides
 
-For slide-based presentations (classes that inherit from `Slide`):
+For slide-based presentations with classes that inherit from `Slide`:
 
 ```bash
-manim-slides render file.py SceneName
+uv run manim-slides render file.py SceneName
 ```
 
 Examples:
+
 ```bash
-# Render NATTEN visualization slides
-manim-slides render vizz/flex/natten.py RasterizationComparison
-
-# Render with custom environment variables
-ORDER=morton manim-slides render vizz/flex/natten.py RasterizationComparison
-
-# Render score modification slides
-manim-slides render vizz/flex/score_mod.py ScoreModAttentionVisualization
+uv run manim-slides render vizz/flex/natten.py RasterizationComparison
+ORDER=morton uv run manim-slides render vizz/flex/natten.py RasterizationComparison
+uv run manim-slides render vizz/flex/score_mod.py ScoreModAttentionVisualization
+uv run manim-slides render vizz/flex/ptce_2026_flex_flash.py PTCE2026FlexFlash -ql
 ```
 
-#### Presenting Slides
+### Presenting slides
 
 After rendering slides, start the presentation:
 
 ```bash
-manim-slides present SceneName
+uv run manim-slides present SceneName
 ```
 
 Example:
-```bash
-manim-slides present RasterizationComparison
-```
-
-**Presentation Controls:**
-- `Space` or `Right Arrow`: Next slide
-- `Left Arrow`: Previous slide
-- `R`: Restart presentation
-- `Q` or `Esc`: Quit presentation
-
-### Quality Settings
-
-#### Low Quality (Fast Preview)
-```bash
-# For ManimGL
-manimgl file.py SceneName -ql
-
-# For manim-slides
-manim-slides render file.py SceneName -ql
-```
-
-#### High Quality (Final Output)
-```bash
-# For ManimGL
-manimgl file.py SceneName -qh
-
-# For manim-slides
-manim-slides render file.py SceneName -qh
-```
-
-### Interactive Development
-
-ManimGL provides a powerful interactive development workflow:
 
 ```bash
-manimgl file.py SceneName -p
+uv run manim-slides present PTCE2026FlexFlash
 ```
 
-### Available Animations
+Presentation controls:
+- `Space` or `Right Arrow`: next slide
+- `Left Arrow`: previous slide
+- `R`: restart presentation
+- `Q` or `Esc`: quit presentation
 
-#### FlexAttention (`vizz/flex/`)
+### Quality settings
+
+Low quality for fast preview:
+
+```bash
+uv run manim file.py SceneName -ql
+uv run manim-slides render file.py SceneName -ql
+```
+
+High quality for final output:
+
+```bash
+uv run manim file.py SceneName -qh
+uv run manim-slides render file.py SceneName -qh
+```
+
+### Interactive development
+
+Manim supports live iteration for non-slide scenes:
+
+```bash
+uv run manim file.py SceneName -p
+```
+
+## Available animations
+
+### FlexAttention (`vizz/flex/`)
 
 | File | Scene Class | Description | Type |
 |------|-------------|-------------|------|
@@ -129,49 +123,35 @@ manimgl file.py SceneName -p
 | `mod_scene.py` | `MaskAnimationScene` | Attention mask visualization | Slide |
 | `causal_attention.py` | `CausalAttentionVisualization` | Causal attention masking | Slide |
 | `block_mask.py` | `BlockMaskKVCreation` | Block mask construction | Slide |
+| `ptce_2026_flex_flash.py` | `PTCE2026FlexFlash` | Lightning talk deck for FlexAttention + FlashAttention-4 | Slide |
 
-#### Examples with Environment Variables
+## Output files
 
-```bash
-# NATTEN with Morton order
-ORDER=morton manim-slides render vizz/flex/natten.py RasterizationComparison
+- Videos are saved under `videos/`
+- Slide metadata is saved under `slides/`
+- Rendered assets are saved under `media/`
 
-# NATTEN with row-major order (default)
-ORDER=row_major manim-slides render vizz/flex/natten.py RasterizationComparison
-```
+## Development tips
 
-### Output Files
-
-- **Animations**: Video files saved to `videos/` directory
-- **Slides**: HTML presentations saved for interactive viewing
-- **Images**: Individual frames saved as PNG files
-
-## Development Tips
-
-1. **Start with low quality** (`-ql`) during development for faster iteration
-2. **Use interactive mode** (`-p`) with ManimGL for real-time adjustments
-3. **Test slides** with `manim-slides render` before final presentation
-4. **Environment variables** can customize animation behavior (see individual files)
-5. **Preview slides** with `manim-slides present` to test navigation
+1. Start with `-ql` during development for faster iteration.
+2. Use `uv run manim ... -p` when you want interactive iteration on non-slide scenes.
+3. Use `uv run manim-slides render ...` before presenting.
+4. Keep environment-variable customization local to the command that needs it.
 
 ## Requirements
 
-- Python 3.7+
-- ManimGL
+- Python 3.10+
+- `uv`
+- Manim
 - manim-slides
 - PyTorch
-- PIL (Pillow)
+- Pillow
 - NumPy
 
 ## Troubleshooting
 
-### Common Issues
-
-1. **Module not found**: Ensure you've installed with `pip install -e .`
-2. **ffmpeg missing**: Install with `brew install ffmpeg` on macOS
-3. **LaTeX errors**: Install with `brew install mactex` on macOS
-4. **Slides won't present**: Make sure you rendered them first with `manim-slides render`
-
-### Getting Help
-
-Check individual animation files for specific usage instructions - many contain command examples in their docstrings.
+1. If imports fail, run `uv sync` again.
+2. If `ffmpeg` is missing, install it with Homebrew.
+3. If LaTeX rendering fails, install `mactex` with Homebrew.
+4. If slides will not present, render them first with `uv run manim-slides render ...`.
+5. `manim-slides present` needs Qt bindings. This repo includes `pyside6`, so run `uv sync` if you see `qtpy.QtBindingsNotFoundError`.

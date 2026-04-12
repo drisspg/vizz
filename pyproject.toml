@@ -7,7 +7,7 @@ name = "vizz"
 version = "0.1.0"
 description = "A visualization library using Manim"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.10"
 license = { file = "LICENSE" }
 authors = [
     { name = "driss guessous", email = "drisspguessous@gmail.com" },
@@ -23,13 +23,15 @@ classifiers = [
 ]
 dependencies = [
     "torch",
-    "manimgl==1.7.2",
-    "ruff"
+    "manim",
+    "manim-slides",
+    "pyside6",
+    "ruff",
 ]
 
 [tool.black]
 line-length = 88
-target-version = ['py37']
+target-version = ['py310']
 include = '\.pyi?$'
 
 [tool.isort]

@@ -1,0 +1,21 @@
+{
+  "slides": [
+    {
+      "loop": false,
+      "auto_next": false,
+      "playback_rate": 1.0,
+      "reversed_playback_rate": 1.0,
+      "notes": "",
+      "dedent_notes": true,
+      "skip_animations": false,
+      "src": null,
+      "file": "slides/files/E2EFlow/13b958f9cc7c007849388eea53803de17b9415b34ff1395acf96cd6ee141fc23.mp4",
+      "rev_file": "slides/files/E2EFlow/13b958f9cc7c007849388eea53803de17b9415b34ff1395acf96cd6ee141fc23_reversed.mp4"
+    }
+  ],
+  "resolution": [
+    1920,
+    1080
+  ],
+  "background_color": "black"
+}

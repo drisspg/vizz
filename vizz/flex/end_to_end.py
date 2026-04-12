@@ -1,4 +1,4 @@
-"""To run call manimgl vizz/flex/end_to_end.py AttentionScoresVisualization"""
+"""To run call manim vizz/flex/end_to_end.py AttentionScoresVisualization"""
 
 import torch
 from manim import *
@@ -16,12 +16,10 @@ COLORS = {
         "query": GOLD_D,
         "key": BLUE_D,
         "result": GREEN_D,
-    }
+    },
 }
 
-OPACITY = {
-    "highlight": 0.2
-}
+OPACITY = {"highlight": 0.2}
 
 
 class MatrixHelper:
@@ -39,7 +37,9 @@ class MatrixHelper:
         matrix = Matrix(
             matrix_data,
             element_to_mobject_config={"color": COLORS["matrix"]},
-            bracket_config={"color": COLORS["bracket"]} if with_brackets else {"opacity": 0}
+            bracket_config={"color": COLORS["bracket"]}
+            if with_brackets
+            else {"opacity": 0},
         )
 
         if label_text:
@@ -84,7 +84,9 @@ class AttentionScoresVisualization(Slide):
         self.key = torch.arange(8).view(4, 2)
         self.key_t = self.key.T
         self.attention_scores = torch.matmul(self.query, self.key_t)
-        self.softmax_scores = torch.softmax(self.attention_scores.to(torch.float32), dim=1)
+        self.softmax_scores = torch.softmax(
+            self.attention_scores.to(torch.float32), dim=1
+        )
         self.value_data = torch.arange(8).reshape(4, 2) + 1
         self.value_data = self.value_data.to(torch.float32)
         self.output = self.softmax_scores @ self.value_data
@@ -93,7 +95,7 @@ class AttentionScoresVisualization(Slide):
         # Create the formula that will be displayed at the top
         self.formula = MathTex(
             r"\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V",
-            color=COLORS["text"]
+            color=COLORS["text"],
         )
 
     def advance_slide(self):
@@ -110,10 +112,12 @@ class AttentionScoresVisualization(Slide):
             height=mobject.get_height(),
             fill_color=color,
             fill_opacity=opacity,
-            stroke_width=0
+            stroke_width=0,
         ).move_to(mobject)
 
-    def highlight_dot_product(self, row_index, col_index, query_group, key_t_group, attention_group):
+    def highlight_dot_product(
+        self, row_index, col_index, query_group, key_t_group, attention_group
+    ):
         """Highlight the dot product calculation for specific row and column"""
         # Get the specific row and column
         query_row = query_group[1].get_rows()[row_index]
@@ -156,8 +160,8 @@ class AttentionScoresVisualization(Slide):
             fill_color=LIGHT_GREY,
             fill_opacity=0.3,
             stroke_width=1,
-            stroke_color=GREY
-        ).to_edge(DOWN, buff=.2)
+            stroke_color=GREY,
+        ).to_edge(DOWN, buff=0.2)
 
         self.formula.move_to(formula_banner.get_center())
 
@@ -194,7 +198,9 @@ class AttentionScoresVisualization(Slide):
 
     def calculate_attention_scores(self, query_group, key_t_group):
         """Visualize the calculation of attention scores"""
-        attention_group = self.helper.create_matrix(self.attention_scores, "Attention Scores")
+        attention_group = self.helper.create_matrix(
+            self.attention_scores, "Attention Scores"
+        )
 
         times = Tex("×", color=COLORS["text"]).scale(1.5)
         equals = Tex("=", color=COLORS["text"]).scale(1.5)
@@ -210,12 +216,17 @@ class AttentionScoresVisualization(Slide):
 
         # Position operators
         times.move_to(
-            midpoint(self.helper.get_matrix_center(equation[0]),
-                     self.helper.get_matrix_center(equation[2])) - 0.5 * RIGHT
+            midpoint(
+                self.helper.get_matrix_center(equation[0]),
+                self.helper.get_matrix_center(equation[2]),
+            )
+            - 0.5 * RIGHT
         )
         equals.move_to(
-            midpoint(self.helper.get_matrix_center(equation[2]),
-                     self.helper.get_matrix_center(equation[4]))
+            midpoint(
+                self.helper.get_matrix_center(equation[2]),
+                self.helper.get_matrix_center(equation[4]),
+            )
         )
 
         # Scale to fit screen
@@ -234,7 +245,9 @@ class AttentionScoresVisualization(Slide):
 
         return times, equals, attention_group
 
-    def focus_on_attention_scores(self, query_group, key_t_group, times, equals, attention_group):
+    def focus_on_attention_scores(
+        self, query_group, key_t_group, times, equals, attention_group
+    ):
         """Focus on the attention scores matrix"""
         attention_title = attention_group[0]
 
@@ -245,7 +258,7 @@ class AttentionScoresVisualization(Slide):
             FadeOut(times),
             FadeOut(equals),
             attention_title.animate.to_edge(UP, buff=0.5).set_x(0),
-            attention_group[1].animate.scale(1.2).move_to(ORIGIN).shift(DOWN * 0.5)
+            attention_group[1].animate.scale(1.2).move_to(ORIGIN).shift(DOWN * 0.5),
         )
         self.advance_slide()
 
@@ -259,13 +272,10 @@ class AttentionScoresVisualization(Slide):
 
         softmax_formula = MathTex(
             r"\text{softmax}(x_i) = \frac{e^{x_i}}{\sum_j e^{x_j}}",
-            color=COLORS["text"]
+            color=COLORS["text"],
         ).next_to(softmax_title, DOWN)
 
-        self.play(
-            Transform(attention_title, softmax_title),
-            Write(softmax_formula)
-        )
+        self.play(Transform(attention_title, softmax_title), Write(softmax_formula))
         self.advance_slide()
 
         return softmax_formula
@@ -289,7 +299,7 @@ class AttentionScoresVisualization(Slide):
             FadeOut(attention_group[0]),  # Fade out old title
             Transform(matrix_on_screen, softmax_group[1]),  # Transform matrix
             Transform(title_on_screen, softmax_group[0]),  # Transform formula
-            run_time=1
+            run_time=1,
         )
         self.advance_slide()
 
@@ -301,16 +311,16 @@ class AttentionScoresVisualization(Slide):
     def introduce_value_and_calculate_output(self, softmax_group):
         """Introduce the Value matrix and calculate the output"""
         # Introduce value matrix
-        value_group = self.helper.create_matrix(
-            self.value_data, "Value Matrix (V)"
-        )
+        value_group = self.helper.create_matrix(self.value_data, "Value Matrix (V)")
         value_group.scale(0.75)
 
         # Create a copy to animate
         softmax_copy = softmax_group.copy()
         softmax_copy.to_edge(LEFT)
         self.play(Transform(softmax_group, softmax_copy))
-        times_symbol = Tex("×", color=COLORS["text"]).scale(1.5).next_to(softmax_copy, RIGHT)
+        times_symbol = (
+            Tex("×", color=COLORS["text"]).scale(1.5).next_to(softmax_copy, RIGHT)
+        )
 
         # Then, position the value matrix next to it and fade it in))
         value_group.next_to(times_symbol, RIGHT)
@@ -326,7 +336,9 @@ class AttentionScoresVisualization(Slide):
         output_group.scale(0.75)
 
         # Add equals symbol and show output
-        equals_symbol = Tex("=", color=COLORS["text"]).scale(1.5).next_to(value_group, RIGHT)
+        equals_symbol = (
+            Tex("=", color=COLORS["text"]).scale(1.5).next_to(value_group, RIGHT)
+        )
         output_group.next_to(equals_symbol, RIGHT)
 
         self.play(FadeIn(equals_symbol))
@@ -335,7 +347,15 @@ class AttentionScoresVisualization(Slide):
 
         return value_group, times_symbol, equals_symbol, output_group
 
-    def show_conclusion(self, softmax_group, value_group, times_symbol, equals_symbol, output_group, banner_group):
+    def show_conclusion(
+        self,
+        softmax_group,
+        value_group,
+        times_symbol,
+        equals_symbol,
+        output_group,
+        banner_group,
+    ):
         """Show the conclusion with the attention mechanism formula"""
         # Remove highlighting from the formula
         if hasattr(self, "current_highlight") and self.current_highlight:
@@ -343,7 +363,9 @@ class AttentionScoresVisualization(Slide):
             self.current_highlight = None
 
         # Create the final text
-        final_text = Text("And that's all you need!", color=COLORS["text"], font_size=36)
+        final_text = Text(
+            "And that's all you need!", color=COLORS["text"], font_size=36
+        )
 
         # Fade out everything except output_group
         self.play(
@@ -352,7 +374,7 @@ class AttentionScoresVisualization(Slide):
             FadeOut(times_symbol),
             FadeOut(equals_symbol),
             FadeOut(banner_group),
-            FadeOut(self.formula)
+            FadeOut(self.formula),
         )
 
         # Center the output matrix
@@ -362,7 +384,9 @@ class AttentionScoresVisualization(Slide):
         self.play(output_group.animate.scale(0.8).to_edge(UP))
 
         # Create final text
-        final_text = Text("And that's all you need!", color=COLORS["text"], font_size=36).center()
+        final_text = Text(
+            "And that's all you need!", color=COLORS["text"], font_size=36
+        ).center()
 
         # Transform output_group to final_text (visually replaces but keeps the reference)
         self.play(Transform(output_group, final_text))
@@ -374,8 +398,6 @@ class AttentionScoresVisualization(Slide):
         # Since output_group now looks like final_text, transform it to plot_twist
         self.play(Transform(output_group, plot_twist))
         self.advance_slide()
-
-
 
     def construct(self):
         """Main construct method that orchestrates the visualization"""
@@ -392,7 +414,9 @@ class AttentionScoresVisualization(Slide):
         key_t_group = self.transform_key_to_key_t(query_group, key_group)
 
         # Step 3: Calculate attention scores
-        times, equals, attention_group = self.calculate_attention_scores(query_group, key_t_group)
+        times, equals, attention_group = self.calculate_attention_scores(
+            query_group, key_t_group
+        )
 
         # Step 4: Show dot product examples
         for row, col in [(0, 0), (2, 1)]:
@@ -402,7 +426,9 @@ class AttentionScoresVisualization(Slide):
         self.advance_slide()
 
         # Step 5: Focus on attention scores
-        attention_title = self.focus_on_attention_scores(query_group, key_t_group, times, equals, attention_group)
+        attention_title = self.focus_on_attention_scores(
+            query_group, key_t_group, times, equals, attention_group
+        )
 
         # Step 6: Explain softmax
         softmax_formula = self.explain_softmax(attention_title)
@@ -411,7 +437,16 @@ class AttentionScoresVisualization(Slide):
         softmax_group = self.apply_softmax(attention_group, softmax_formula)
 
         # Step 8: Introduce value matrix
-        value_group, times_symbol, equals_symbol, output_group = self.introduce_value_and_calculate_output(softmax_group)
+        value_group, times_symbol, equals_symbol, output_group = (
+            self.introduce_value_and_calculate_output(softmax_group)
+        )
 
         # Step 10: Show conclusion
-        self.show_conclusion(softmax_group, value_group, times_symbol, equals_symbol, output_group, banner_group)
+        self.show_conclusion(
+            softmax_group,
+            value_group,
+            times_symbol,
+            equals_symbol,
+            output_group,
+            banner_group,
+        )
