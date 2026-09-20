@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from contextlib import ExitStack
+
 from manim import *
 from manim_slides import Slide
 
@@ -12,7 +14,10 @@ class SlideBase(Slide):
 
     def construct(self) -> None:
         self.camera.background_color = ManimColor(self.theme.background)
-        self.build_slides()
+        with ExitStack() as fonts:
+            for font_file in self.theme.font_files:
+                fonts.enter_context(register_font(font_file))
+            self.build_slides()
 
     def build_slides(self) -> None:
         raise NotImplementedError

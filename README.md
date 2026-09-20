@@ -30,6 +30,24 @@ Manim shapes. Check playback in your target app before presenting. To share in a
 browser, use `uv run manim-slides convert MyTalkDeck my_talk.html` and keep its
 companion assets together.
 
+### Nuggets-style technical patterns
+
+The [pattern gallery](docs/patterns.md) includes a selected-cell walkthrough,
+tiled matrix, and controlled comparison, in the KDA blog's light/dark visual
+language. IBM Plex fonts are bundled under their OFL license—no font installation
+or render-time download required. The focus example uses LaTeX.
+
+```bash
+uv run vizz preview patterns --theme dark
+open media/review/patterns/all/dark/frames/index.html
+uv run vizz new my_technical_talk --template patterns
+```
+
+Use `--slide focus`, `--slide tiles`, or `--slide comparison` for a single example.
+Omit `--slide` to review all slides; use `--theme light` for the paper palette.
+Without `--theme`, each deck keeps its existing style. Explicit themes have
+separate preview directories so light/dark reviews do not overwrite each other.
+
 ### Pairing from an Excalidraw sketch
 
 **Yes: a rough drawing is a useful starting point.** Save the editable
@@ -53,6 +71,9 @@ vizz/
 ├── presentations/
 │   ├── theme.py        # Shared color and typography tokens
 │   ├── components.py   # SlideBase, panels, code cards, headings
+│   ├── tensor_grid.py  # Values, masks, named cell/region addressing
+│   ├── layouts.py      # Same-scale comparison layout
+│   ├── patterns/       # Copyable Nuggets-style technical gallery
 │   ├── starter/        # Runnable, copyable two-slide example
 │   └── <your_deck>/    # brief.md, scenes.md, sketches/, slides/, build.py
 ├── flex/               # Animations for FlexAttention

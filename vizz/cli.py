@@ -15,6 +15,8 @@ import av
 import typer
 from manim import tempconfig
 
+from vizz.presentations.theme import NUGGETS_DARK_THEME, NUGGETS_LIGHT_THEME
+
 ROOT = Path(__file__).resolve().parents[1]
 STARTER = Path(__file__).resolve().parent / "presentations" / "starter"
 app = typer.Typer(
@@ -38,9 +40,20 @@ def deck_path(name: str) -> Path:
     return ROOT / "vizz" / "presentations" / name
 
 
+class Template(str, Enum):
+    starter = "starter"
+    patterns = "patterns"
+
+
+class ThemeChoice(str, Enum):
+    deck = "deck"
+    light = "light"
+    dark = "dark"
+
+
 @app.command()
-def new(name: str) -> None:
-    """Copy the starter deck, brief, and sketch handoff without overwriting work."""
+def new(name: str, template: Template = Template.starter) -> None:
+    """Copy a deck template, brief, and sketch handoff without overwriting work."""
     destination = deck_path(name)
     if destination.exists() or destination.with_suffix(".py").exists():
         raise typer.BadParameter(
@@ -52,23 +65,33 @@ def new(name: str) -> None:
             raise typer.BadParameter(
                 f"Scene name {scene_name} already used by {manifest.parent.name}; choose another name."
             )
+    source = STARTER.with_name(template.value)
+    source_scene = tomllib.loads((source / "deck.toml").read_text())["scene"]
     shutil.copytree(
-        STARTER, destination, ignore=shutil.ignore_patterns("__pycache__", "*.pyc")
+        source, destination, ignore=shutil.ignore_patterns("__pycache__", "*.pyc")
     )
     for item in (destination / "build.py", destination / "deck.toml"):
         item.write_text(
             item.read_text()
-            .replace("vizz.presentations.starter", f"vizz.presentations.{name}")
-            .replace("StarterDeck", scene_name)
+            .replace(
+                f"vizz.presentations.{template.value}", f"vizz.presentations.{name}"
+            )
+            .replace(source_scene, scene_name)
         )
     typer.echo(f"Created {destination.relative_to(ROOT)}")
+    first_slide = "focus" if template == Template.patterns else "workflow"
     typer.echo(
-        f"Edit brief.md and scenes.md, then: uv run vizz preview {name} --slide workflow"
+        f"Edit brief.md and scenes.md, then: uv run vizz preview {name} --slide {first_slide}"
     )
 
 
 def render_deck(
-    name: str, slide: str, quality: Quality, *, preview: bool
+    name: str,
+    slide: str,
+    quality: Quality,
+    *,
+    preview: bool,
+    theme: ThemeChoice = ThemeChoice.deck,
 ) -> tuple[Path, str]:
     directory = deck_path(name)
     manifest = directory / "deck.toml"
@@ -87,6 +110,8 @@ def render_deck(
         if preview
         else ROOT / "media" / name
     )
+    if theme != ThemeChoice.deck:
+        output /= theme.value
     slides = output / "slides" if preview else ROOT / "slides"
     previous = os.environ.get("SLIDE")
     if slide:
@@ -107,6 +132,12 @@ def render_deck(
             }
         ):
             scene = getattr(module, scene_name)(output_folder=slides)
+            if theme != ThemeChoice.deck:
+                scene.theme = (
+                    NUGGETS_DARK_THEME
+                    if theme == ThemeChoice.dark
+                    else NUGGETS_LIGHT_THEME
+                )
             if preview:
                 scene.skip_reversing = True
             scene.render()
@@ -119,9 +150,11 @@ def render_deck(
 
 
 @app.command()
-def render(name: str, quality: Quality = Quality.low) -> None:
+def render(
+    name: str, quality: Quality = Quality.low, theme: ThemeChoice = ThemeChoice.deck
+) -> None:
     """Render a complete deck for presenting/exporting (l, m, or h quality)."""
-    manifest, scene_name = render_deck(name, "", quality, preview=False)
+    manifest, scene_name = render_deck(name, "", quality, preview=False, theme=theme)
     typer.echo(f"Slides: {manifest}")
     typer.echo(f"Present: uv run manim-slides present {scene_name}")
 
@@ -164,12 +197,13 @@ def write_gallery(manifest: Path, output: Path) -> Path:
 @app.command()
 def preview(
     name: str,
-    slide: str = typer.Option(..., help="A key from build.py's SLIDES registry."),
+    slide: str = typer.Option(
+        "", help="A SLIDES registry key; omit to review the whole deck."
+    ),
+    theme: ThemeChoice = ThemeChoice.deck,
 ) -> None:
-    """Render one slide at low quality and write an HTML/PNG pause-state gallery."""
-    if not slide:
-        raise typer.BadParameter("Choose a slide from build.py's SLIDES registry.")
-    manifest, _ = render_deck(name, slide, Quality.low, preview=True)
+    """Render a low-quality HTML/PNG review gallery, isolated from live slides."""
+    manifest, _ = render_deck(name, slide, Quality.low, preview=True, theme=theme)
     index = write_gallery(manifest, manifest.parent.parent / "frames")
     typer.echo(f"Review: {index}")
     typer.echo(f"Open: open {index}")

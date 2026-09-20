@@ -25,6 +25,13 @@ uv run vizz preview my_talk --slide workflow
 uv run vizz render my_talk
 ```
 
+For technical diagrams, read `docs/patterns.md` and use
+`uv run vizz new my_talk --template patterns`. Reuse `TensorGrid` and `Comparison`
+before inventing new matrix helpers/layouts. The renderable catalog is
+`uv run vizz preview patterns --theme dark` (also review `--theme light`).
+Omitting `--slide` reviews all slides. Explicit themes add a theme directory to
+preview output paths. Preserve existing decks' themes unless asked to migrate.
+
 Each new deck includes `brief.md`, `scenes.md`, `sketches/`, and `deck.toml`.
 Treat PNG/screenshot exports plus editable `.excalidraw` sources as visual briefs:
 preserve labels and semantic relationships, agree on reveal order, then rebuild

@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from pathlib import Path
 
 from manim import config
 
@@ -27,6 +28,7 @@ class Theme:
     code_background: str = ""
     panel_corner_radius: float = 0.18
     panel_stroke_width: float = 2.0
+    font_files: tuple[Path, ...] = ()
 
     @property
     def max_title_width(self) -> float:
@@ -55,6 +57,57 @@ FRONTIER_LIGHT_THEME = Theme(
     code_background="#eee9df",
     panel_corner_radius=0.06,
     panel_stroke_width=1.5,
+)
+
+# Vendored OFL fonts are registered for a render, not installed system-wide.
+_FONT_ROOT = Path(__file__).with_name("fonts")
+NUGGETS_LIGHT_THEME = Theme(
+    background="#f4f0e8",
+    text="#1a2e22",
+    muted_text="#6a7a6e",
+    accent_primary="#5f7f67",
+    accent_secondary="#97551c",
+    accent_success="#5f7f67",
+    accent_danger="#aa413a",
+    panel_fill="#eae6de",
+    panel_stroke="#b9b4aa",
+    divider="#d0ccc4",
+    display_font="IBM Plex Sans",
+    sans_font="IBM Plex Sans",
+    mono_font="IBM Plex Mono",
+    title_font_size=40,
+    body_font_size=26,
+    bullet_font_size=24,
+    meta_font_size=16,
+    code_style="friendly",
+    code_background="#eae6de",
+    panel_corner_radius=0.04,
+    panel_stroke_width=1.0,
+    font_files=tuple(
+        _FONT_ROOT / f"{name}.ttf"
+        for name in (
+            "IBMPlexSans-Regular",
+            "IBMPlexSans-Bold",
+            "IBMPlexMono-Regular",
+            "IBMPlexMono-Medium",
+        )
+    ),
+)
+
+NUGGETS_DARK_THEME = replace(
+    NUGGETS_LIGHT_THEME,
+    background="#0e0e0e",
+    text="#d4d4d4",
+    muted_text="#999999",
+    accent_primary="#6f8f7b",
+    accent_secondary="#e3a15f",
+    accent_success="#6f8f7b",
+    accent_danger="#d36b62",
+    panel_fill="#161616",
+    panel_stroke="#4a4a4a",
+    divider="#303030",
+    code_style="monokai",
+    code_background="#161616",
 )
 
 PYTORCH_THEME = Theme(

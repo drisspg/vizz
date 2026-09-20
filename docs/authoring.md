@@ -15,6 +15,11 @@ names the Manim scene class; `build.py` imports one module per slide and declare
 an ordered `SLIDES` mapping. Keep that mapping and class name in sync when
 renaming files. The CLI is repo-local, not a general installed-deck manager.
 
+For matrix/attention/kernel visuals, start with
+`uv run vizz new my_talk --template patterns` instead. Read the
+[Nuggets pattern catalog](patterns.md) for reusable tensor grids, same-scale
+comparisons, named walkthrough beats, and the bundled light/dark themes.
+
 ## Agree on meaning before motion
 
 1. Fill in `brief.md`: audience, one takeaway, constraints, sources, and output.
@@ -83,6 +88,11 @@ It includes speaker notes and numbered PNGs for precise feedback: “Beat 2: mak
 the dependency arrow point left.” It is a static review artifact, not a live
 file watcher. Re-run after edits. Preview always uses low quality and skips
 reverse-video generation; use a full render for presenting.
+
+Omit `--slide` to review the whole deck (output under `all/`). Add
+`--theme light` or `--theme dark` for Nuggets variants, saved under an additional
+`light/` or `dark/` directory before `frames/`. With no theme option, the deck's
+chosen theme and the original output path are unchanged.
 
 Inspect every beat for:
 - clipping and overflow, including titles and panel contents;
