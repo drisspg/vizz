@@ -7,7 +7,7 @@ name = "vizz"
 version = "0.1.0"
 description = "A visualization library using Manim"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = { file = "LICENSE" }
 authors = [
     { name = "driss guessous", email = "drisspguessous@gmail.com" },
@@ -22,21 +22,33 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
+    "av>=18.1.0,<19",
+    "pillow>=12.3.0,<13",
     "torch",
-    "manim",
-    "manim-slides",
-    "pyside6",
-    "ruff",
+    "manim>=0.21.0,<0.22",
+    "manim-slides>=5.7.0,<6",
+    "pyside6>=6.11.2,<7",
+    "typer>=0.27.2,<0.28",
+]
+
+[project.scripts]
+vizz = "vizz.cli:app"
+
+[dependency-groups]
+dev = [
+    "prek>=0.5.3,<0.6",
+    "pytest>=9.1.1,<10",
+    "ruff==0.16.8",
 ]
 
 [tool.black]
 line-length = 88
-target-version = ['py310']
+target-version = ['py311']
 include = '\.pyi?$'
 
 [tool.isort]
 profile = "black"
 multi_line_output = 3
 
-[tool.ruff]
+[tool.ruff.lint]
 ignore = ["F405", "F403"]

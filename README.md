@@ -2,19 +2,70 @@
 
 Collection of math visualizations using Manim and Manim-Slides for interactive presentations.
 
+## Start your next presentation
+
+```bash
+uv sync
+uv run vizz new my_talk
+uv run vizz preview my_talk --slide workflow
+open media/review/my_talk/workflow/frames/index.html
+```
+
+Edit `vizz/presentations/my_talk/brief.md` and `scenes.md` first, then the modules
+under `slides/`. Each slide has a stable name in `build.py`'s `SLIDES` registry.
+The preview command renders only that slide, skips reverse-video generation, and
+saves a PNG for every pause plus an HTML gallery. Preview files are isolated from
+`slides/`, so trying a single slide does not replace your presentable full deck.
+Watch the generated video as well when reviewing motion.
+
+```bash
+uv run vizz render my_talk
+uv run manim-slides present MyTalkDeck
+uv run vizz render my_talk --quality h
+uv run manim-slides convert MyTalkDeck my_talk.pptx
+```
+
+The `.pptx` opens in Keynote, but the visuals are rendered media, not editable
+Manim shapes. Check playback in your target app before presenting. To share in a
+browser, use `uv run manim-slides convert MyTalkDeck my_talk.html` and keep its
+companion assets together.
+
+### Pairing from an Excalidraw sketch
+
+**Yes: a rough drawing is a useful starting point.** Save the editable
+`.excalidraw` file **and a readable PNG export** in your deck's `sketches/` folder
+(or give the agent a screenshot). Add what the arrows/colors mean, the exact
+labels, and numbered reveal steps. The source preserves editable geometry; the
+PNG makes visual review reliable without depending on a particular editor.
+
+The workflow is **sketch → slide plan → Manim objects → rendered review**.
+This is an agent-assisted redraw, not a lossless automatic Excalidraw importer.
+Use a static PNG when the drawing does not need animation; rebuild meaningful
+objects when they need independent reveals, highlights, or transformations.
+See the [authoring guide](docs/authoring.md) and the generated `brief.md` for a
+copyable handoff prompt.
+
 ## Project Structure
 
 ```
 vizz/
-├── flex/       # Animations for FlexAttention
-└── quant/      # Quant animations
+├── cli.py              # new / preview / render
+├── presentations/
+│   ├── theme.py        # Shared color and typography tokens
+│   ├── components.py   # SlideBase, panels, code cards, headings
+│   ├── starter/        # Runnable, copyable two-slide example
+│   └── <your_deck>/    # brief.md, scenes.md, sketches/, slides/, build.py
+├── flex/               # Animations for FlexAttention
+└── quant/              # Quant animations
 ```
 
 ## Setup
 
 1. Install macOS system dependencies:
 ```bash
-brew install ffmpeg mactex
+brew install cairo pango pkg-config ffmpeg
+# Optional: only needed for Tex/MathTex scenes, not the starter deck.
+brew install --cask mactex
 ```
 
 2. Sync the project environment with `uv`:
@@ -63,7 +114,7 @@ Examples:
 uv run manim-slides render vizz/flex/natten.py RasterizationComparison
 ORDER=morton uv run manim-slides render vizz/flex/natten.py RasterizationComparison
 uv run manim-slides render vizz/flex/score_mod.py ScoreModAttentionVisualization
-uv run manim-slides render vizz/flex/ptce_2026_flex_flash.py PTCE2026FlexFlash -ql
+uv run manim-slides render vizz/presentations/ptce_2026_flex_flash/build.py PTCE2026FlexFlash -ql
 ```
 
 ### Presenting slides
@@ -104,7 +155,7 @@ uv run manim-slides render file.py SceneName -qh
 
 ### Interactive development
 
-Manim supports live iteration for non-slide scenes:
+Manim's `-p` opens the rendered result (it is not a file watcher):
 
 ```bash
 uv run manim file.py SceneName -p
@@ -123,13 +174,18 @@ uv run manim file.py SceneName -p
 | `mod_scene.py` | `MaskAnimationScene` | Attention mask visualization | Slide |
 | `causal_attention.py` | `CausalAttentionVisualization` | Causal attention masking | Slide |
 | `block_mask.py` | `BlockMaskKVCreation` | Block mask construction | Slide |
-| `ptce_2026_flex_flash.py` | `PTCE2026FlexFlash` | Lightning talk deck for FlexAttention + FlashAttention-4 | Slide |
+
+The FlexAttention + FlashAttention-4 deck is under
+`vizz/presentations/ptce_2026_flex_flash/` (scene: `PTCE2026FlexFlash`). It also
+supports `uv run vizz preview ptce_2026_flex_flash --slide title` and
+`uv run vizz render ptce_2026_flex_flash`.
 
 ## Output files
 
-- Videos are saved under `videos/`
-- Slide metadata is saved under `slides/`
-- Rendered assets are saved under `media/`
+- CLI deck videos/assets: `media/<deck>/`
+- Isolated single-slide previews: `media/review/<deck>/<slide>/`
+- Presentable slide metadata and clips: `slides/`
+- Direct Manim CLI output defaults to `media/videos/`
 
 ## Development tips
 
@@ -140,13 +196,29 @@ uv run manim file.py SceneName -p
 
 ## Requirements
 
-- Python 3.10+
+- Python 3.11+
 - `uv`
 - Manim
 - manim-slides
 - PyTorch
 - Pillow
 - NumPy
+
+## Validation and upgrades
+
+```bash
+uv run pytest tests/ -v
+uv run ruff check vizz/cli.py vizz/presentations/starter/ tests/
+uv run ruff format --check vizz/cli.py vizz/presentations/starter/ tests/
+uv run manim checkhealth
+```
+
+`uv.lock` records the tested environment; normal setup is `uv sync`, not an
+unbounded reinstall. For a deliberate refresh, run `uv lock --upgrade` and
+`uv sync`, then the tests and a rendered starter/representative existing slide.
+Runtime dependencies have compatibility bounds; developer tooling lives in the
+`dev` dependency group. Some older animation files have pre-existing Ruff
+violations; avoid mass-formatting unrelated scenes during authoring.
 
 ## Troubleshooting
 

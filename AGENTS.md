@@ -15,6 +15,28 @@ Vizz is a visualization library for creating mathematical and attention mechanis
 uv sync
 ```
 
+## New presentation workflow
+
+Read `docs/authoring.md` before starting a new deck. Use the runnable starter:
+
+```bash
+uv run vizz new my_talk
+uv run vizz preview my_talk --slide workflow
+uv run vizz render my_talk
+```
+
+Each new deck includes `brief.md`, `scenes.md`, `sketches/`, and `deck.toml`.
+Treat PNG/screenshot exports plus editable `.excalidraw` sources as visual briefs:
+preserve labels and semantic relationships, agree on reveal order, then rebuild
+only the elements that need animation. Do not promise automatic lossless import.
+New slide modules leave the last pause state visible; the deck clears between
+modules. Preserve existing decks' cleanup conventions unless migrating explicitly.
+
+Preview galleries live in `media/review/<deck>/<slide>/frames/index.html` with
+one PNG per pause. Read every changed pause-state image before reporting success;
+watch the video when reviewing motion. Previews do not replace the full deck's
+`slides/` metadata. Run `uv run pytest tests/ -v` when changing the workflow CLI.
+
 ## Common Development Commands
 
 ### Running animations
@@ -126,7 +148,8 @@ ORDER=row_major uv run manim-slides render vizz/flex/natten.py RasterizationComp
 
 ## Output locations
 
-- Videos: `videos/[SceneName]/`
+- CLI videos: `media/<deck>/videos/`; direct Manim videos: `media/videos/`
+- Isolated previews: `media/review/<deck>/<slide>/`
 - Slides: `slides/`
 - Media assets: `media/`
 
@@ -147,11 +170,15 @@ When iterating on slide layout, always self-review the rendered output before pr
 
 ### Single-slide iteration
 
-Use the `SLIDE` env var to render only one slide (much faster than the full deck):
+For decks with `deck.toml`, prefer the isolated preview and its pause-state PNGs:
 
 ```bash
-SLIDE=title uv run manim vizz/presentations/<name>/build.py <SceneName> -ql
+uv run vizz preview <name> --slide title
 ```
+
+The legacy `SLIDE=title uv run manim-slides render ... -ql` path still works but
+writes normal slide metadata. For scenes without the CLI workflow, use the
+manual frame-extraction procedure below.
 
 ### Extracting a frame for visual inspection
 
