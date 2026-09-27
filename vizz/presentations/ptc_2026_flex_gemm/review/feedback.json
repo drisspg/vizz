@@ -23,7 +23,7 @@
  {
   "id": "cmuk5epy7la2",
   "kind": "visual",
-  "status": "question",
+  "status": "done",
   "created": "2026-09-27T18:24:48.607Z",
   "slide": "problem",
   "beat": 1,
@@ -47,13 +47,13 @@
   ],
   "annotated": "annotations/cmuk5epy7la2.png",
   "submission": "s20260927T183711",
-  "reply": "Note just says \"adf\" — what should change here? The arrow runs from below GEMM kernel up through C to the TODAY label.",
+  "reply": "Note just says \"adf\" — what should change here? The arrow runs from below GEMM kernel up through C to the TODAY label. (dismissed: mistake)",
   "resolved": "2026-09-27T18:38:15+00:00"
  },
  {
   "id": "cmuk5wnq4z3k",
   "kind": "wording",
-  "status": "applied",
+  "status": "done",
   "created": "2026-09-27T18:38:45.532Z",
   "slide": "problem",
   "beat": 1,

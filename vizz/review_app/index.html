@@ -348,6 +348,7 @@ function card(item, number, beat) {
   if (item.status === "open" && !item.submission) button("Delete", () => { feedback = feedback.filter(f => f !== item); save(); });
   if (!isOpen(item) && item.status !== "done") button("Accept", () => { item.status = "done"; save(); });
   if (!isOpen(item) || item.status === "question") button("Reopen", () => { item.status = "open"; item.reply = ""; delete item.submission; save(); });
+  if (item.status === "question") button("Dismiss", () => { item.status = "done"; save(); });
   if (row.children.length) div.append(row);
   return div;
 }
