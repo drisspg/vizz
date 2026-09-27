@@ -1,0 +1,74 @@
+[
+ {
+  "id": "cmuk5axqma74",
+  "kind": "wording",
+  "status": "done",
+  "created": "2026-09-27T18:21:52.078Z",
+  "slide": "problem",
+  "beat": 1,
+  "image": "frames/problem/20260927T181459285957-01.png",
+  "old": "Epilogues are everywhere, and usually a round trip",
+  "new": "Epilogues are everywhere for those with the eyes to see",
+  "marks": [
+   {
+    "type": "box",
+    "x0": 0.0422,
+    "y0": 0.075,
+    "x1": 0.9683,
+    "y1": 0.1417
+   }
+  ],
+  "reply": "replaced in vizz/presentations/ptc_2026_flex_gemm/slides/problem.py"
+ },
+ {
+  "id": "cmuk5epy7la2",
+  "kind": "visual",
+  "status": "question",
+  "created": "2026-09-27T18:24:48.607Z",
+  "slide": "problem",
+  "beat": 1,
+  "image": "frames/problem/20260927T182355757721-01.png",
+  "text": "adf",
+  "tag": "layout",
+  "marks": [
+   {
+    "type": "arrow",
+    "points": [
+     [
+      0.20450712884853353,
+      0.7288291506587692
+     ],
+     [
+      0.3566015437421506,
+      0.5473388790604065
+     ]
+    ]
+   }
+  ],
+  "annotated": "annotations/cmuk5epy7la2.png",
+  "submission": "s20260927T183711",
+  "reply": "Note just says \"adf\" — what should change here? The arrow runs from below GEMM kernel up through C to the TODAY label.",
+  "resolved": "2026-09-27T18:38:15+00:00"
+ },
+ {
+  "id": "cmuk5wnq4z3k",
+  "kind": "wording",
+  "status": "applied",
+  "created": "2026-09-27T18:38:45.532Z",
+  "slide": "problem",
+  "beat": 1,
+  "image": "frames/problem/20260927T183719951799-01.png",
+  "old": "bias · activation · residual · α/β\naux outputs · fp8 scales · SwiGLU\n\nshoudl we add like and many more",
+  "new": "bias · activation · residual · α/β\naux outputs · fp8 scales · SwiGLU",
+  "marks": [
+   {
+    "type": "box",
+    "x0": 0.6723,
+    "y0": 0.2432,
+    "x1": 0.9662,
+    "y1": 0.3779
+   }
+  ],
+  "reply": "replaced in vizz/presentations/ptc_2026_flex_gemm/slides/problem.py"
+ }
+]
