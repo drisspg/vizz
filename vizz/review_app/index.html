@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vizz review</title>
+<style>
+  :root {
+    --paper: #f4f0e8; --panel: #eae6de; --ink: #1a2e22; --muted: #4e5c52;
+    --rule: #d0ccc4; --green: #4a6b53; --amber: #97551c; --red: #aa413a; --mark: #d9480f;
+    --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    --sans: "IBM Plex Sans", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.4 var(--sans); }
+  header { display: flex; gap: 1rem; align-items: center; padding: .45rem 1rem; border-bottom: 1px solid var(--rule); min-height: 46px; }
+  header h1 { font-size: 1rem; margin: 0; font-weight: 600; }
+  .meta { font: 12px var(--mono); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  #banner { flex: 1; font-size: 14px; }
+  #banner.working { color: var(--amber); } #banner.done { color: var(--green); }
+  main { display: grid; grid-template-columns: 200px 1fr 380px; height: calc(100vh - 46px); }
+  nav, aside { overflow: auto; padding: .5rem; }
+  nav { border-right: 1px solid var(--rule); }
+  aside { border-left: 1px solid var(--rule); }
+  nav h2 { font: 12px var(--mono); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: .8rem 0 .3rem; display: flex; justify-content: space-between; }
+  nav .thumbs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  nav img { width: 100%; border: 1px solid var(--rule); border-radius: 2px; cursor: pointer; display: block; }
+  nav .thumb { position: relative; }
+  nav .thumb.active img { outline: 2px solid var(--amber); }
+  nav .badge { position: absolute; top: 2px; right: 2px; background: var(--amber); color: #fff; font: 10px var(--mono); padding: 0 4px; border-radius: 2px; }
+  section { overflow: auto; padding: .6rem 1rem; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: .5rem; align-items: center; }
+  button { font: 13px var(--sans); background: var(--panel); color: var(--ink); border: 1px solid var(--rule); border-radius: 3px; padding: 4px 10px; cursor: pointer; }
+  button:hover { border-color: var(--muted); }
+  button.on { border-color: var(--amber); box-shadow: inset 0 -2px 0 var(--amber); }
+  button.primary { background: var(--green); color: #fff; border-color: var(--green); }
+  button.primary:disabled { background: var(--panel); color: var(--muted); border-color: var(--rule); cursor: default; }
+  button:focus-visible, textarea:focus-visible { outline: 2px solid var(--amber); }
+  .stage { position: relative; width: 100%; user-select: none; touch-action: none; }
+  .stage.drawing { cursor: crosshair; }
+  .stage img { width: 100%; display: block; border: 1px solid var(--rule); }
+  .stage svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .textbox { fill: transparent; stroke: var(--green); stroke-dasharray: 4 3; stroke-width: 1.5; vector-effect: non-scaling-stroke; pointer-events: none; opacity: 0; }
+  .stage.tool-text .textbox { opacity: 1; pointer-events: all; cursor: text; }
+  .stage.tool-text .textbox:hover { fill: rgba(74,107,83,.14); }
+  .mark { fill: none; stroke: var(--mark); stroke-width: 3; vector-effect: non-scaling-stroke; stroke-linecap: round; stroke-linejoin: round; }
+  .mark.saved { stroke: var(--amber); stroke-width: 2; }
+  .mark.resolved { stroke: var(--muted); opacity: .45; }
+  .markfill { fill: var(--mark); } .markfill.saved { fill: var(--amber); } .markfill.resolved { fill: var(--muted); opacity: .45; }
+  .num { font: bold 13px var(--mono); fill: #fff; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+  textarea { width: 100%; font: 14px var(--sans); background: #fff; color: var(--ink); border: 1px solid var(--rule); border-radius: 3px; padding: 7px; resize: vertical; }
+  .composer { border: 1px solid var(--rule); border-radius: 2px; padding: .6rem; background: var(--panel); margin-bottom: .8rem; }
+  .seg { display: flex; margin-bottom: .45rem; }
+  .seg button { border-radius: 0; flex: 1; } .seg button:first-child { border-radius: 3px 0 0 3px; } .seg button:last-child { border-radius: 0 3px 3px 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 4px; margin: .35rem 0; min-height: 1.2rem; }
+  .chip { font: 12px var(--mono); border: 1px solid var(--mark); color: var(--mark); border-radius: 2px; padding: 0 5px; cursor: pointer; }
+  .card { overflow-wrap: anywhere; border: 1px solid var(--rule); border-radius: 2px; background: #f8f5ef; padding: .5rem .6rem; margin-bottom: .5rem; }
+  .card .top { display: flex; justify-content: space-between; gap: .5rem; align-items: center; }
+  .status { font: 11px var(--mono); text-transform: uppercase; padding: 0 5px; border-radius: 2px; border: 1px solid currentColor; }
+  .status.draft { color: var(--muted); } .status.sent { color: var(--amber); } .status.question { color: var(--red); }
+  .status.fixed, .status.applied, .status.done { color: var(--green); } .status.wontfix { color: var(--muted); }
+  .card.done, .card.wontfix { opacity: .6; }
+  .diff { font: 13px var(--mono); white-space: pre-wrap; margin: .3rem 0; }
+  .diff del { color: var(--red); } .diff ins { color: var(--green); text-decoration: none; }
+  .reply { color: var(--green); margin-top: .3rem; } .card.question .reply { color: var(--red); }
+  .ba { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: .35rem; }
+  .ba img { width: 100%; border: 1px solid var(--rule); cursor: zoom-in; }
+  .row { display: flex; gap: 4px; margin-top: .4rem; flex-wrap: wrap; align-items: center; }
+  .hint { color: var(--muted); font-size: 13px; }
+  h3 { font: 12px var(--mono); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: .7rem 0 .3rem; font-weight: 500; }
+  dialog { border: 1px solid var(--rule); border-radius: 3px; background: var(--paper); color: var(--ink); width: min(620px, 90vw); }
+  dialog::backdrop { background: rgba(0,0,0,.2); }
+  .log { font: 11px var(--mono); white-space: pre-wrap; max-height: 8rem; overflow: auto; color: var(--red); }
+  #zoom { max-width: 95vw; }
+  #zoom img { width: 100%; }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="deck">Vizz review</h1>
+  <span class="meta" id="where"></span>
+  <span id="banner"></span>
+  <button class="primary" id="send" title="Apply wording edits and hand the rest to the agent">Send to agent</button>
+</header>
+<main>
+  <nav id="nav" aria-label="Slides and pauses"></nav>
+  <section>
+    <div class="toolbar" role="toolbar" aria-label="Markup tools">
+      <button data-tool="text" title="Click any text to reword it (T)">T · edit wording</button>
+      <button data-tool="box" title="Drag around an area (B)">B · box an area</button>
+      <button data-tool="pin" title="Click a spot (P)">P · point</button>
+      <button data-tool="arrow" title="Drag from a thing to where it should go (A)">A · arrow</button>
+      <span style="flex:1"></span>
+      <span class="meta" id="rendering"></span>
+      <button id="rerender" title="Re-render this slide from the current code">Re-render slide</button>
+    </div>
+    <div class="stage" id="stage">
+      <img id="frame" alt="">
+      <svg id="overlay"></svg>
+    </div>
+    <h3>Speaker notes</h3>
+    <textarea id="notes" rows="3"></textarea>
+    <div class="row"><button id="saveNotes">Save notes edit</button><span class="hint">←/→ pauses · T B P A tools · Esc clears marks</span></div>
+    <div class="log" id="log"></div>
+  </section>
+  <aside id="side" aria-label="Feedback">
+    <div class="composer">
+      <div class="seg" role="radiogroup" aria-label="Comment scope">
+        <button data-scope="pause" class="on">This pause</button>
+        <button data-scope="slide">This slide</button>
+        <button data-scope="deck">Whole deck</button>
+      </div>
+      <div class="chips" id="chips"></div>
+      <textarea id="comment" rows="4" placeholder="Describe what you want. Optionally box, point, or draw arrows on the frame first; they are numbered and attached to this comment."></textarea>
+      <div class="row"><button class="primary" id="add">Add comment</button><span class="hint">⌘↵ to add</span></div>
+    </div>
+    <div id="lists"></div>
+  </aside>
+</main>
+
+<dialog id="dialog">
+  <form method="dialog">
+    <h3>Edit wording</h3>
+    <div class="hint">Current</div><div class="diff" id="oldText"></div>
+    <p><textarea id="newText" rows="4"></textarea></p>
+    <div class="row"><button value="save" class="primary">Save edit</button><button value="cancel">Cancel</button></div>
+  </form>
+</dialog>
+<dialog id="zoom"><form method="dialog"><img id="zoomImg" alt=""><div class="row"><button>Close</button></div></form></dialog>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let state = null, feedback = [], beats = [], current = 0, tool = null, scope = "pause";
+let marks = [], draft = null, dragging = false, W = 854, H = 480, wasRendering = "", showDone = false;
+
+const isOpen = (f) => f.status === "open" || f.status === "question";
+const label = (f) => f.status === "open" ? (f.submission ? "sent" : "draft") : f.status;
+
+async function refresh(keepPosition = true) {
+  const data = await (await fetch("/api/state")).json();
+  const previous = beats[current];
+  state = data; feedback = data.feedback || [];
+  const order = [...(data.order || []), ...Object.keys(data.slides).filter(k => !(data.order || []).includes(k))];
+  beats = [];
+  for (const key of order) (data.slides[key]?.beats || []).forEach((b, i) => beats.push({ ...b, slide: key, index: i + 1 }));
+  if (keepPosition && previous) {
+    const same = beats.findIndex(b => b.slide === previous.slide && b.index === previous.index);
+    current = same >= 0 ? same : Math.min(current, beats.length - 1);
+  }
+  $("deck").textContent = `Vizz review · ${data.deck || ""}`;
+  if (data.rendering) {
+    $("rendering").textContent = `re-rendering ${data.rendering}… ${data.render_seconds}s (usually ~20s per slide)`;
+    wasRendering = data.rendering;
+  } else if (wasRendering) {
+    $("rendering").textContent = `${wasRendering} updated ✓`;
+    const done = wasRendering; wasRendering = "";
+    setTimeout(() => { if ($("rendering").textContent.startsWith(done)) $("rendering").textContent = ""; }, 6000);
+  }
+  $("rerender").disabled = Boolean(data.rendering);
+  const failed = !data.rendering && (data.log || "").startsWith("render failed");
+  $("log").textContent = failed ? data.log.slice(-1500) : "";
+  renderBanner(data.submissions || []);
+  render();
+}
+
+function renderBanner(submissions) {
+  const last = submissions.at(-1), banner = $("banner");
+  const drafts = feedback.filter(f => isOpen(f) && !f.submission).length;
+  $("send").textContent = drafts ? `Send to agent (${drafts})` : "Send to agent";
+  $("send").disabled = !drafts;
+  banner.className = "";
+  if (!last) { banner.textContent = drafts ? "" : "Add comments or wording edits, then Send to agent."; return; }
+  if (last.status === "pending") { banner.className = "working"; banner.textContent = `Sent ${last.items.length} item(s) — waiting for the agent to pick them up…`; }
+  else if (last.status === "in_progress") { banner.className = "working"; banner.textContent = `Agent is working on ${last.items.length} item(s)… frames update here as slides re-render.`; }
+  else { banner.className = "done"; banner.textContent = `Agent finished${last.message ? ": " + last.message : ""}. Check replies and before/now frames; Accept or Reopen.`; }
+}
+
+function itemsForBeat(beat) { return feedback.filter(f => f.slide === beat.slide && f.beat === beat.index); }
+
+function render() {
+  if (!beats.length) { $("where").textContent = "no frames yet"; return; }
+  const beat = beats[current];
+  $("where").textContent = `${beat.slide} · pause ${beat.index} · ${current + 1}/${beats.length}`;
+  const img = $("frame");
+  if (!img.src.endsWith(beat.image)) img.src = `/files/${beat.image}`;
+  if (document.activeElement !== $("notes")) $("notes").value = beat.notes || "";
+  renderNav(); renderOverlay(); renderChips(); renderLists();
+}
+
+$("frame").onload = () => {
+  W = $("frame").naturalWidth; H = $("frame").naturalHeight;
+  $("overlay").setAttribute("viewBox", `0 0 ${W} ${H}`);
+  renderOverlay();
+};
+
+function renderNav() {
+  const nav = $("nav"), scroll = nav.scrollTop; nav.innerHTML = "";
+  let last = null, grid = null;
+  beats.forEach((beat, i) => {
+    if (beat.slide !== last) {
+      last = beat.slide;
+      const open = feedback.filter(f => f.slide === beat.slide && isOpen(f)).length;
+      const h = document.createElement("h2");
+      h.innerHTML = `<span>${beat.slide}</span><span>${open ? open + " open" : ""}</span>`;
+      grid = document.createElement("div"); grid.className = "thumbs"; nav.append(h, grid);
+    }
+    const div = document.createElement("div");
+    div.className = "thumb" + (i === current ? " active" : "");
+    const open = itemsForBeat(beat).filter(isOpen).length;
+    div.innerHTML = `<img src="/files/${beat.image}" alt="${beat.slide} ${beat.index}">` + (open ? `<span class="badge">${open}</span>` : "");
+    div.onclick = () => go(i);
+    grid.append(div);
+  });
+  nav.scrollTop = scroll;
+}
+
+function go(i) { current = i; marks = []; draft = null; render(); }
+
+function el(tag, attrs, parent, text) {
+  const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+  if (text !== undefined) node.textContent = text;
+  parent.append(node); return node;
+}
+
+function arrowHead(x1, y1, x2, y2, size) {
+  const a = Math.atan2(y2 - y1, x2 - x1);
+  return `M${x2 - size * Math.cos(a - 0.5)},${y2 - size * Math.sin(a - 0.5)} L${x2},${y2} L${x2 - size * Math.cos(a + 0.5)},${y2 - size * Math.sin(a + 0.5)} Z`;
+}
+
+function drawMark(m, parent, cls, number) {
+  if (m.points?.length) {  // marks saved by the first page version: [[x, y], ...]
+    const [a, b] = [m.points[0], m.points.at(-1)];
+    m = { type: "arrow", x0: a[0], y0: a[1], x1: b[0], y1: b[1] };
+  }
+  const g = el("g", {}, parent);
+  let anchor;
+  if (m.type === "pin") {
+    el("circle", { cx: m.x * W, cy: m.y * H, r: 9, class: `markfill ${cls}` }, g);
+    anchor = [m.x * W, m.y * H];
+    if (number) { el("text", { x: anchor[0], y: anchor[1], class: "num" }, g, number); return; }
+  } else if (m.type === "box") {
+    const x = Math.min(m.x0, m.x1) * W, y = Math.min(m.y0, m.y1) * H;
+    el("rect", { x, y, width: Math.abs(m.x1 - m.x0) * W, height: Math.abs(m.y1 - m.y0) * H, rx: 3, class: `mark ${cls}` }, g);
+    anchor = [x, y];
+  } else if (m.type === "arrow") {
+    const [x1, y1, x2, y2] = [m.x0 * W, m.y0 * H, m.x1 * W, m.y1 * H];
+    el("line", { x1, y1, x2, y2, class: `mark ${cls}` }, g);
+    el("path", { d: arrowHead(x1, y1, x2, y2, 14), class: `markfill ${cls}` }, g);
+    el("circle", { cx: x1, cy: y1, r: 4, class: `markfill ${cls}` }, g);
+    anchor = [x1, y1];
+  }
+  if (number) {
+    el("circle", { cx: anchor[0], cy: anchor[1], r: 10, class: `markfill ${cls}` }, g);
+    el("text", { x: anchor[0], y: anchor[1], class: "num" }, g, number);
+  }
+}
+
+function renderOverlay() {
+  const svg = $("overlay"); svg.innerHTML = "";
+  if (!beats.length) return;
+  const beat = beats[current];
+  (beat.texts || []).forEach((t) => {
+    const [x0, y0, x1, y1] = t.box;
+    const rect = el("rect", { x: x0 * W - 3, y: y0 * H - 3, width: (x1 - x0) * W + 6, height: (y1 - y0) * H + 6, class: "textbox" }, svg);
+    el("title", {}, rect, t.text);
+    rect.addEventListener("pointerdown", (e) => { if (tool === "text") { e.stopPropagation(); editWording(t); } });
+  });
+  itemsForBeat(beat).forEach((item, n) => {
+    if (!showDone && (item.status === "done" || item.status === "wontfix")) return;
+    const cls = isOpen(item) ? "saved" : "resolved";
+    (item.marks || []).forEach((m, k) => drawMark(m, svg, cls, item.marks.length > 1 ? `${n + 1}${"abcdefgh"[k]}` : `${n + 1}`));
+  });
+  marks.forEach((m, k) => drawMark(m, svg, "", `${k + 1}`));
+  if (draft) drawMark(draft, svg, "");
+}
+
+function renderChips() {
+  const chips = $("chips"); chips.innerHTML = "";
+  if (!marks.length) { chips.innerHTML = `<span class="hint">No marks — comment applies to the whole ${scope}.</span>`; return; }
+  marks.forEach((m, k) => {
+    const chip = document.createElement("span"); chip.className = "chip";
+    chip.textContent = `${k + 1} · ${m.type === "pin" ? "point" : m.type} ✕`;
+    chip.title = "Remove this mark";
+    chip.onclick = () => { marks.splice(k, 1); renderOverlay(); renderChips(); };
+    chips.append(chip);
+  });
+}
+
+function esc(s) { return (s || "").replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])); }
+
+const isFinished = (f) => f.status === "done" || f.status === "wontfix";
+const isAwaitingAccept = (f) => f.status === "fixed" || f.status === "applied";
+
+function renderLists() {
+  const box = $("lists"); box.innerHTML = "";
+  const beat = beats[current];
+
+  // Housekeeping: accept what the agent resolved, then archive finished items.
+  const awaiting = feedback.filter(isAwaitingAccept), finished = feedback.filter(isFinished);
+  const bar = document.createElement("div"); bar.className = "row"; bar.style.marginBottom = ".3rem";
+  const add = (text, fn, title) => { const b = document.createElement("button"); b.textContent = text; b.title = title; b.onclick = fn; bar.append(b); };
+  if (awaiting.length) add(`Accept all resolved (${awaiting.length})`, () => { awaiting.forEach(f => f.status = "done"); save(); }, "Mark every fixed/applied item as done");
+  if (finished.length) add(`Archive done (${finished.length})`, async () => {
+    await fetch("/api/archive", { method: "POST", body: "{}" }); refresh();
+  }, "Move done items to review/archive.json and delete their old frames");
+  const toggle = document.createElement("label"); toggle.className = "hint";
+  toggle.innerHTML = `<input type="checkbox" ${showDone ? "checked" : ""}> show done`;
+  toggle.querySelector("input").onchange = (e) => { showDone = e.target.checked; renderLists(); renderOverlay(); };
+  bar.append(toggle);
+  box.append(bar);
+
+  const visible = (f) => showDone || !isFinished(f);
+  const beatItems = itemsForBeat(beat);
+  const groups = [
+    ["This pause", beatItems],
+    ["This slide", feedback.filter(f => f.slide === beat.slide && !f.beat)],
+    ["Whole deck", feedback.filter(f => !f.slide)],
+  ];
+  for (const [title, items] of groups) {
+    const shown = items.filter(visible);
+    const hidden = items.length - shown.length;
+    const h = document.createElement("h3");
+    h.textContent = `${title} (${shown.length})` + (hidden ? ` · ${hidden} done hidden` : "");
+    box.append(h);
+    shown.forEach((item) => box.append(card(item, title === "This pause" ? beatItems.indexOf(item) + 1 : null, beat)));
+  }
+}
+
+function card(item, number, beat) {
+  const div = document.createElement("div");
+  const status = label(item);
+  div.className = `card ${status}`;
+  const kind = item.kind === "visual" ? (number ? `comment #${number}` : "comment") : item.kind === "notes" ? "notes edit" : "wording edit";
+  let body = `<div class="top"><span class="meta">${kind}</span><span class="status ${status}">${status}</span></div>`;
+  if (item.kind !== "visual") body += `<div class="diff"><del>${esc(item.old)}</del>\n<ins>${esc(item.new)}</ins></div>`;
+  if (item.text) body += `<div>${esc(item.text)}</div>`;
+  if (item.reply) body += `<div class="reply">↳ ${esc(item.reply)}</div>`;
+  const now = beat && item.slide === beat.slide && item.beat === beat.index ? beat.image : null;
+  if (item.image && now && now !== item.image && !isFinished(item)) {
+    body += `<div class="ba"><figure style="margin:0"><img data-zoom src="/files/${item.annotated || item.image}"><figcaption class="meta">before</figcaption></figure>` +
+            `<figure style="margin:0"><img data-zoom src="/files/${now}"><figcaption class="meta">now</figcaption></figure></div>`;
+  }
+  div.innerHTML = body;
+  div.querySelectorAll("[data-zoom]").forEach(img => img.onclick = () => { $("zoomImg").src = img.src; $("zoom").showModal(); });
+  const row = document.createElement("div"); row.className = "row";
+  const button = (text, fn) => { const b = document.createElement("button"); b.textContent = text; b.onclick = fn; row.append(b); };
+  if (item.status === "open" && !item.submission) button("Delete", () => { feedback = feedback.filter(f => f !== item); save(); });
+  if (!isOpen(item) && item.status !== "done") button("Accept", () => { item.status = "done"; save(); });
+  if (!isOpen(item) || item.status === "question") button("Reopen", () => { item.status = "open"; item.reply = ""; delete item.submission; save(); });
+  if (row.children.length) div.append(row);
+  return div;
+}
+
+async function save() {
+  await fetch("/api/feedback", { method: "POST", body: JSON.stringify({ items: feedback }) });
+  refresh();
+}
+
+const newId = () => "c" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+
+function base(kind, where) {
+  const beat = beats[current];
+  const item = { id: newId(), kind, status: "open", created: new Date().toISOString() };
+  if (where !== "deck") item.slide = beat.slide;
+  if (where === "pause") { item.beat = beat.index; item.image = beat.image; }
+  return item;
+}
+
+function editWording(t) {
+  $("oldText").textContent = t.text;
+  $("newText").value = t.text;
+  const dialog = $("dialog");
+  dialog.onclose = () => {
+    const value = $("newText").value;
+    if (dialog.returnValue !== "save" || value === t.text) return;
+    feedback.push({ ...base("wording", "pause"), old: t.text, new: value,
+      marks: [{ type: "box", x0: t.box[0], y0: t.box[1], x1: t.box[2], y1: t.box[3] }] });
+    save();
+  };
+  dialog.showModal();
+  $("newText").focus(); $("newText").select();
+}
+
+async function annotate(item) {
+  const img = $("frame"), canvas = document.createElement("canvas");
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(img, 0, 0);
+  ctx.strokeStyle = ctx.fillStyle = "#d9480f"; ctx.lineWidth = 3; ctx.lineCap = "round";
+  item.marks.forEach((m, k) => {
+    let ax, ay;
+    ctx.beginPath();
+    if (m.type === "pin") { ax = m.x * W; ay = m.y * H; }
+    else if (m.type === "box") { ctx.strokeRect(m.x0 * W, m.y0 * H, (m.x1 - m.x0) * W, (m.y1 - m.y0) * H); ax = Math.min(m.x0, m.x1) * W; ay = Math.min(m.y0, m.y1) * H; }
+    else {
+      ctx.moveTo(m.x0 * W, m.y0 * H); ctx.lineTo(m.x1 * W, m.y1 * H); ctx.stroke();
+      ctx.fill(new Path2D(arrowHead(m.x0 * W, m.y0 * H, m.x1 * W, m.y1 * H, 14)));
+      ax = m.x0 * W; ay = m.y0 * H;
+    }
+    ctx.beginPath(); ctx.arc(ax, ay, 10, 0, 7); ctx.fill();
+    ctx.fillStyle = "#fff"; ctx.font = "bold 13px monospace"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(`${k + 1}`, ax, ay); ctx.fillStyle = "#d9480f";
+  });
+  const response = await fetch("/api/annotation", { method: "POST", body: JSON.stringify({ id: item.id, png: canvas.toDataURL("image/png") }) });
+  item.annotated = (await response.json()).path;
+}
+
+async function addComment() {
+  const text = $("comment").value.trim();
+  if (!text) { $("comment").focus(); return; }
+  const where = marks.length ? "pause" : scope;
+  const item = { ...base("visual", where), text };
+  if (marks.length) { item.marks = marks.map(m => ({ ...m })); await annotate(item); }
+  feedback.push(item);
+  marks = []; $("comment").value = "";
+  save();
+}
+$("add").onclick = addComment;
+$("comment").addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) addComment(); });
+
+document.querySelectorAll("[data-scope]").forEach(b => b.onclick = () => {
+  scope = b.dataset.scope;
+  document.querySelectorAll("[data-scope]").forEach(x => x.classList.toggle("on", x === b));
+  renderChips();
+});
+
+// Drawing: coordinates are stored as fractions of the frame (0..1, y down).
+function point(e) {
+  const r = $("stage").getBoundingClientRect();
+  return [Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), Math.min(1, Math.max(0, (e.clientY - r.top) / r.height))];
+}
+function addMark(m) {
+  marks.push(m); draft = null;
+  document.querySelector("[data-scope=pause]").click();  // marks belong to this pause
+  renderOverlay(); renderChips(); $("comment").focus();
+}
+$("stage").addEventListener("pointerdown", (e) => {
+  if (!tool || tool === "text") return;
+  e.preventDefault();
+  const [x, y] = point(e);
+  if (tool === "pin") { addMark({ type: "pin", x, y }); return; }
+  dragging = true; $("stage").setPointerCapture(e.pointerId);
+  draft = { type: tool, x0: x, y0: y, x1: x, y1: y };
+  renderOverlay();
+});
+$("stage").addEventListener("pointermove", (e) => {
+  if (!dragging) return;
+  [draft.x1, draft.y1] = point(e);
+  renderOverlay();
+});
+$("stage").addEventListener("pointerup", () => {
+  if (!dragging) return;
+  dragging = false;
+  const big = Math.hypot((draft.x1 - draft.x0) * W, (draft.y1 - draft.y0) * H) > 12;
+  if (big) {
+    if (draft.type === "box") draft = { type: "box", x0: Math.min(draft.x0, draft.x1), y0: Math.min(draft.y0, draft.y1), x1: Math.max(draft.x0, draft.x1), y1: Math.max(draft.y0, draft.y1) };
+    addMark(draft);
+  } else { draft = null; renderOverlay(); }
+});
+
+function setTool(name) {
+  tool = tool === name ? null : name;
+  document.querySelectorAll("[data-tool]").forEach(b => b.classList.toggle("on", b.dataset.tool === tool));
+  $("stage").className = "stage" + (tool ? ` tool-${tool}` : "") + (tool && tool !== "text" ? " drawing" : "");
+}
+document.querySelectorAll("[data-tool]").forEach(b => b.onclick = () => setTool(b.dataset.tool));
+
+$("saveNotes").onclick = () => {
+  const beat = beats[current], value = $("notes").value;
+  if (value === (beat.notes || "")) return;
+  feedback.push({ ...base("notes", "pause"), old: beat.notes || "", new: value });
+  save();
+};
+$("rerender").onclick = async () => {
+  await fetch("/api/render", { method: "POST", body: JSON.stringify({ slide: beats[current].slide }) });
+  refresh();
+  const poll = setInterval(async () => { await refresh(); if (!state.rendering) clearInterval(poll); }, 1000);
+};
+$("send").onclick = async () => {
+  $("send").disabled = true;
+  await fetch("/api/submit", { method: "POST", body: "{}" });
+  refresh();
+};
+
+document.addEventListener("keydown", (e) => {
+  if (e.repeat || ["TEXTAREA", "INPUT"].includes(e.target.tagName) || document.querySelector("dialog[open]")) return;
+  const keys = { t: "text", b: "box", p: "pin", a: "arrow" };
+  if (keys[e.key]) setTool(keys[e.key]);
+  else if (e.key === "ArrowRight" && current < beats.length - 1) go(current + 1);
+  else if (e.key === "ArrowLeft" && current > 0) go(current - 1);
+  else if (e.key === "Escape") { marks = []; draft = null; renderOverlay(); renderChips(); }
+});
+
+refresh(false);
+setInterval(() => { if (!document.querySelector("dialog[open]") && !dragging) refresh(); }, 3000);
+</script>
+</body>
+</html>

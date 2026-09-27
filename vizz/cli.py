@@ -15,6 +15,7 @@ import av
 import typer
 from manim import tempconfig
 
+from vizz import review
 from vizz.presentations.theme import NUGGETS_DARK_THEME, NUGGETS_LIGHT_THEME
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -92,6 +93,7 @@ def render_deck(
     *,
     preview: bool,
     theme: ThemeChoice = ThemeChoice.deck,
+    beat_log: list[dict] | None = None,
 ) -> tuple[Path, str]:
     directory = deck_path(name)
     manifest = directory / "deck.toml"
@@ -140,6 +142,8 @@ def render_deck(
                 )
             if preview:
                 scene.skip_reversing = True
+            if beat_log is not None:
+                scene.beat_log = beat_log
             scene.render()
     finally:
         if previous is None:
@@ -203,7 +207,129 @@ def preview(
     theme: ThemeChoice = ThemeChoice.deck,
 ) -> None:
     """Render a low-quality HTML/PNG review gallery, isolated from live slides."""
-    manifest, _ = render_deck(name, slide, Quality.low, preview=True, theme=theme)
+    beats: list[dict] = []
+    manifest, _ = render_deck(
+        name, slide, Quality.low, preview=True, theme=theme, beat_log=beats
+    )
     index = write_gallery(manifest, manifest.parent.parent / "frames")
+    if theme == ThemeChoice.deck:
+        build = importlib.import_module(f"vizz.presentations.{name}.build")
+        review.merge_render(ROOT, name, list(build.SLIDES), beats, index.parent)
     typer.echo(f"Review: {index}")
     typer.echo(f"Open: open {index}")
+
+
+@app.command("review")
+def review_command(
+    name: str,
+    port: int = typer.Option(8765, help="Local port for the review page."),
+    render: bool = typer.Option(
+        False, help="Render the whole deck first (automatic when no frames exist)."
+    ),
+) -> None:
+    """Serve a markup page: edit wording and pin/box/draw comments on each pause."""
+    deck_path(name)
+    if render or not (review.review_dir(ROOT, name) / "state.json").is_file():
+        preview(name, slide="", theme=ThemeChoice.deck)
+    review.serve(ROOT, name, port)
+
+
+feedback_app = typer.Typer(
+    no_args_is_help=True, help="Read and act on review feedback."
+)
+app.add_typer(feedback_app, name="feedback")
+
+
+@feedback_app.command("list")
+def feedback_list(
+    name: str,
+    all_items: bool = typer.Option(False, "--all", help="Include resolved items."),
+    as_json: bool = typer.Option(False, "--json", help="Print raw JSON."),
+) -> None:
+    """Print open feedback (with annotated image paths) for an agent to act on."""
+    deck_path(name)
+    items = review.load_feedback(ROOT, name)
+    if not all_items:
+        items = [item for item in items if item["status"] in review.OPEN_STATUSES]
+    if as_json:
+        typer.echo(json.dumps(items, indent=1, ensure_ascii=False))
+    else:
+        typer.echo(review.format_feedback(ROOT, name, items))
+
+
+@feedback_app.command("apply-wording")
+def feedback_apply_wording(name: str) -> None:
+    """Apply open wording edits whose old text appears exactly once in the deck."""
+    deck_path(name)
+    for item in review.apply_wording(ROOT, name):
+        typer.echo(f"applied {item['id']}: {item['reply']}")
+    for item in review.load_feedback(ROOT, name):
+        if item["kind"] in {"wording", "notes"} and item["status"] == "question":
+            typer.echo(f"needs agent {item['id']}: {item['reply']}")
+
+
+@feedback_app.command("wait")
+def feedback_wait(
+    name: str,
+    timeout: float = typer.Option(3600, help="Seconds to wait before giving up."),
+) -> None:
+    """Block until the review page sends feedback; print it and claim it."""
+    deck_path(name)
+    submission = review.wait_for_submission(ROOT, name, timeout)
+    if submission is None:
+        typer.echo("No submission before timeout.")
+        raise typer.Exit(2)
+    items = [
+        item
+        for item in review.load_feedback(ROOT, name)
+        if item["id"] in submission["items"]
+    ]
+    typer.echo(f"Submission {submission['id']}: {len(items)} item(s)")
+    if submission.get("applied_wording"):
+        typer.echo(
+            f"Wording already applied: {', '.join(submission['applied_wording'])}"
+        )
+    typer.echo(review.format_feedback(ROOT, name, items))
+
+
+@feedback_app.command("done")
+def feedback_done(
+    name: str,
+    message: str = typer.Option("", help="Summary shown on the review page."),
+) -> None:
+    """Mark the claimed submission finished so the page shows the update."""
+    deck_path(name)
+    try:
+        submission = review.finish_submission(ROOT, name, message)
+    except LookupError as error:
+        raise typer.BadParameter(str(error)) from None
+    typer.echo(f"{submission['id']}: done")
+
+
+@feedback_app.command("archive")
+def feedback_archive(name: str) -> None:
+    """Move done/wontfix items to archive.json and delete unused review media."""
+    deck_path(name)
+    typer.echo(f"archived {review.archive(ROOT, name)} item(s)")
+
+
+@feedback_app.command("resolve")
+def feedback_resolve(
+    name: str,
+    item_id: str,
+    status: str = typer.Option(..., help="fixed, question, wontfix, or open."),
+    reply: str = typer.Option("", help="One-line reply shown in the review page."),
+) -> None:
+    """Record the outcome of one feedback item."""
+    deck_path(name)
+    if status not in {"fixed", "question", "wontfix", "open"}:
+        raise typer.BadParameter("status must be fixed, question, wontfix, or open")
+    try:
+        item = review.resolve(ROOT, name, item_id, status, reply)
+    except KeyError:
+        raise typer.BadParameter(f"No feedback item {item_id!r}") from None
+    typer.echo(f"{item['id']}: {item['status']}")
+
+
+if __name__ == "__main__":
+    app()

@@ -116,6 +116,49 @@ commands use the most recent **full** render. Direct legacy commands with
 `SLIDE=...` still work, but write their usual slide metadata; use `vizz preview`
 when you need isolation.
 
+## Interactive review: wording edits and comments
+
+```bash
+uv run vizz review my_talk            # serves http://127.0.0.1:8765/
+```
+
+The page shows every pause of every slide. Everything lands in
+`vizz/presentations/<deck>/review/feedback.json` (commit it with the deck).
+
+1. **Edit wording (T):** click any text on the frame and rewrite it. Speaker
+   notes are editable under the frame.
+2. **Comment:** optionally box an area (B), point at a spot (P), or drag an
+   arrow from a thing to where it should go (A). Marks are numbered and attach
+   to the next comment. Type free-form text in the right panel and *Add
+   comment* (⌘↵). With no marks, pick *This pause*, *This slide*, or *Whole deck*.
+   New items are **drafts** until sent.
+3. **Send to agent:** applies wording edits whose exact text appears once in the
+   deck (and re-renders those slides), then hands every draft comment to the
+   agent. The header shows *waiting* → *agent working* → *agent finished*.
+4. **Review the result:** frames refresh as slides re-render; each card shows
+   the agent's reply and before/now frames. *Accept* or *Reopen*, then send again.
+5. **Clean up:** *Accept all resolved* marks fixed/applied items done; done items
+   are hidden unless *show done* is ticked. *Archive done* (or
+   `uv run vizz feedback archive my_talk`) moves them to `review/archive.json`
+   and deletes review frames and annotations nothing references anymore.
+
+The agent side of the loop:
+
+```bash
+uv run vizz feedback wait my_talk      # blocks until you press Send; prints the items
+# ... fix each item, uv run vizz preview my_talk --slide <slide> ...
+uv run vizz feedback resolve my_talk <id> --status fixed --reply "centred on beads"
+uv run vizz feedback done my_talk --message "moved D inside the kernel border"
+```
+
+`uv run vizz feedback list my_talk` prints open items (with annotated PNG paths)
+without waiting. In Pi, the agent runs `feedback wait` in the background and
+uses the `watch` tool on its PID, so pressing Send wakes the session.
+
+Text shown in the page comes from recorded pauses: `SlideBase.meta_text` and
+`themed_code` store their source strings so edits target the code, not the
+uppercased or reformatted render.
+
 ## Agent handoff
 
 Use the prompt in your deck's `brief.md`. Agents should read the plan and source

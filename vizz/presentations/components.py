@@ -11,6 +11,15 @@ from vizz.presentations.theme import LIGHT_THEME, Theme
 class SlideBase(Slide):
     theme: Theme = LIGHT_THEME
     deck_mark: str = ""
+    # Set to a list by `vizz preview` to record one entry per pause for review.
+    beat_log: list[dict] | None = None
+
+    def next_slide(self, *args, **kwargs) -> None:
+        if self.beat_log is not None:
+            from vizz.review import describe_pause
+
+            self.beat_log.append(describe_pause(self, kwargs.get("notes", "")))
+        super().next_slide(*args, **kwargs)
 
     def construct(self) -> None:
         self.camera.background_color = ManimColor(self.theme.background)
@@ -52,13 +61,15 @@ class SlideBase(Slide):
         color: str | None = None,
         uppercase: bool = True,
     ) -> Text:
-        return Text(
+        label = Text(
             text.upper() if uppercase else text,
             font=self.theme.mono_font,
             font_size=font_size or self.theme.meta_font_size,
             color=color or self.theme.muted_text,
             weight=MEDIUM,
         )
+        label.source_text = text  # review tooling edits the pre-uppercase source
+        return label
 
     def section_header(self, text: str, font_size: int | None = None) -> VGroup:
         t = self.theme
@@ -183,7 +194,7 @@ class SlideBase(Slide):
                 "stroke_color": t.panel_stroke,
                 "stroke_width": 1.0,
             }
-        return Code(
+        code = Code(
             code_string=code_string.strip(),
             language=language,
             add_line_numbers=False,
@@ -192,6 +203,8 @@ class SlideBase(Slide):
             formatter_style=t.code_style,
             **kwargs,
         )
+        code.source_text = code_string.strip()
+        return code
 
     def code_card(
         self,

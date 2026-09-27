@@ -39,10 +39,75 @@ only the elements that need animation. Do not promise automatic lossless import.
 New slide modules leave the last pause state visible; the deck clears between
 modules. Preserve existing decks' cleanup conventions unless migrating explicitly.
 
+For interactive review, see "Interactive review loop" below.
+
 Preview galleries live in `media/review/<deck>/<slide>/frames/index.html` with
 one PNG per pause. Read every changed pause-state image before reporting success;
 watch the video when reviewing motion. Previews do not replace the full deck's
 `slides/` metadata. Run `uv run pytest tests/ -v` when changing the workflow CLI.
+
+## Interactive review loop (`vizz review`)
+
+A local page where the user edits slide wording and leaves free-form visual
+comments, then presses **Send to agent**. Full user-facing docs:
+`docs/authoring.md` ("Interactive review").
+
+### Start it
+
+```bash
+uv run vizz review <deck>              # http://127.0.0.1:8765/ ; --port, --render
+```
+
+It renders the whole deck first when no review frames exist (`--render` forces
+it). It is a long-running server: start it in the background, record its PID,
+and stop only your own process. `uv run vizz preview <deck> [--slide s]` also
+refreshes the page's frames, so re-render with `preview` after code edits.
+
+### How it works
+
+- `vizz preview` records one entry per pause (slide key, speaker notes, visible
+  text with frame boxes) via `SlideBase.beat_log`, then `review.merge_render`
+  copies frames into `media/review/<deck>/review/` (keeps one previous frame per
+  pause for before/now).
+- Feedback lives in `vizz/presentations/<deck>/review/feedback.json`
+  (committed). Kinds: `wording` / `notes` (exact `old` → `new`) and `visual`
+  (free-form `text` plus optional numbered `marks`: `box`, `pin`, `arrow` in
+  frame fractions 0..1, y down; `annotated` is the frame with marks drawn).
+  Status: `open` (draft until it has `submission`) → `fixed` / `applied` /
+  `question` / `wontfix` → `done` (user accepted). Done items get archived to
+  `review/archive.json`.
+- **Send to agent** applies wording edits whose `old` text occurs exactly once
+  in the deck's `.py` files (ambiguous → `question`), re-renders those slides,
+  stamps the remaining drafts with a submission id, and appends a `pending`
+  entry to `review/submissions.json`.
+- Text boxes come from recorded pauses. `meta_text` and `themed_code` store the
+  source string (`source_text`) so wording edits match the code, not the
+  uppercased render. Build text with `SlideBase` helpers to keep it editable.
+
+### Agent side of the loop
+
+```bash
+uv run vizz feedback wait <deck>       # blocks until Send; claims + prints items (exit 2 = timeout)
+uv run vizz feedback list <deck>       # open items without waiting (--all, --json)
+uv run vizz feedback resolve <deck> <id> --status fixed|question|wontfix --reply "..."
+uv run vizz feedback done <deck> --message "..."   # closes the claimed submission
+uv run vizz feedback archive <deck>    # archive done items, prune unused review media
+```
+
+For each claimed item: read its `annotated` PNG (the marks are what the user
+drew), fix it, re-render the slide with `vizz preview --slide <slide>`, read the
+new frame, then `resolve` with a one-line reply. Use `question` when the note is
+ambiguous rather than guessing. Finish with `done`; the page shows the message.
+
+Staying in the loop from Pi: run `feedback wait` somewhere that wakes the
+session when it exits. On Linux, background it and use the `watch` tool on its
+PID. On macOS (`watch` needs `/proc`), launch a background `runner` subagent
+whose only task is to run `feedback wait <deck> --timeout 27000` and return its
+stdout; its completion wakes the parent. Re-arm the waiter after each `done`.
+
+Changing the review code: `vizz/review.py`, `vizz/review_app/index.html`,
+`vizz/cli.py`; tests in `tests/test_review.py`. Restart the server after
+Python changes (the HTML is re-read on each page load).
 
 ## Common Development Commands
 
