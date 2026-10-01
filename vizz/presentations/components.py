@@ -14,11 +14,19 @@ class SlideBase(Slide):
     # Set to a list by `vizz preview` to record one entry per pause for review.
     beat_log: list[dict] | None = None
 
+    # Set to a list by `vizz preview` stills mode: animations are skipped and each
+    # pause is captured as one full-resolution image instead of a video clip.
+    stills: list | None = None
+
     def next_slide(self, *args, **kwargs) -> None:
         if self.beat_log is not None:
             from vizz.review import describe_pause
 
             self.beat_log.append(describe_pause(self, kwargs.get("notes", "")))
+        if self.stills is not None:
+            self.renderer.update_frame(self)
+            self.stills.append(self.camera.get_image().copy())
+            return
         super().next_slide(*args, **kwargs)
 
     def construct(self) -> None:

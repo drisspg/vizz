@@ -99,10 +99,16 @@ def load_state(root: Path, deck: str) -> dict:
 
 
 def merge_render(
-    root: Path, deck: str, order: list[str], beats: list[dict], frames: Path
+    root: Path,
+    deck: str,
+    order: list[str],
+    beats: list[dict],
+    frames: Path,
+    clips: list[Path] | None = None,
 ) -> dict:
-    """Copy a render's frames into the review state, grouped by slide key."""
+    """Copy a render's frames (and video clips, if any) into the review state."""
     images = sorted(frames.glob("beat-*.png"))
+    clips = clips or [None] * len(images)
     if len(images) != len(beats):
         raise ValueError(
             f"{len(images)} frames but {len(beats)} recorded pauses; cannot map frames to slides"
@@ -110,18 +116,21 @@ def merge_render(
     directory = review_dir(root, deck)
     state = load_state(root, deck)
     stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S%f")
-    grouped: dict[str, list[tuple[dict, Path]]] = {}
-    for beat, image in zip(beats, images, strict=True):
-        grouped.setdefault(beat["slide"] or "unknown", []).append((beat, image))
+    grouped: dict[str, list[tuple[dict, Path, Path | None]]] = {}
+    for beat, image, clip in zip(beats, images, clips, strict=True):
+        grouped.setdefault(beat["slide"] or "unknown", []).append((beat, image, clip))
     for key, items in grouped.items():
         target = directory / "frames" / key
         target.mkdir(parents=True, exist_ok=True)
         previous = state["slides"].get(key, {}).get("beats", [])
         entries = []
-        for index, (beat, image) in enumerate(items, start=1):
+        for index, (beat, image, clip) in enumerate(items, start=1):
             name = f"{stamp}-{index:02d}.png"
             shutil.copyfile(image, target / name)
             entry = {**beat, "image": f"frames/{key}/{name}"}
+            if clip is not None:
+                shutil.copyfile(clip, target / f"{stamp}-{index:02d}.mp4")
+                entry["clip"] = f"frames/{key}/{stamp}-{index:02d}.mp4"
             if index <= len(previous):
                 entry["previous_image"] = previous[index - 1]["image"]
             entries.append(entry)
@@ -131,6 +140,29 @@ def merge_render(
     directory.mkdir(parents=True, exist_ok=True)
     (directory / "state.json").write_text(json.dumps(state, indent=1))
     return state
+
+
+def attach_clips(root: Path, deck: str, beats: list[dict], clips: list[Path]) -> bool:
+    """Add video clips to existing (sharper) still entries; False if counts differ."""
+    directory = review_dir(root, deck)
+    state = load_state(root, deck)
+    grouped: dict[str, list[Path]] = {}
+    for beat, clip in zip(beats, clips, strict=True):
+        grouped.setdefault(beat["slide"] or "unknown", []).append(clip)
+    for key, slide_clips in grouped.items():
+        entries = state["slides"].get(key, {}).get("beats", [])
+        if len(entries) != len(slide_clips):
+            return False
+    for key, slide_clips in grouped.items():
+        stamp = state["slides"][key]["stamp"]
+        for index, (entry, clip) in enumerate(
+            zip(state["slides"][key]["beats"], slide_clips, strict=True), start=1
+        ):
+            name = f"frames/{key}/{stamp}-{index:02d}.mp4"
+            shutil.copyfile(clip, directory / name)
+            entry["clip"] = name
+    (directory / "state.json").write_text(json.dumps(state, indent=1))
+    return True
 
 
 # ---------------------------------------------------------------------------
@@ -210,6 +242,11 @@ def apply_wording(root: Path, deck: str) -> list[dict]:
         if item["kind"] not in {"wording", "notes"} or item["status"] != "open":
             continue
         old, new = item.get("old", ""), item.get("new", "")
+        if item["kind"] == "wording" and not new.strip():
+            # Empty text would crash the render; removing an element needs code.
+            item["status"] = "question"
+            item["reply"] = "empty text: send it so an agent removes the element"
+            continue
         hits = []
         for path in sources:
             code = path.read_text()
@@ -270,12 +307,17 @@ def prune_media(root: Path, deck: str) -> int:
     keep = set()
     for slide in load_state(root, deck)["slides"].values():
         for beat in slide["beats"]:
-            keep.update(filter(None, (beat.get("image"), beat.get("previous_image"))))
+            keep.update(
+                filter(
+                    None,
+                    (beat.get("image"), beat.get("previous_image"), beat.get("clip")),
+                )
+            )
     for item in load_feedback(root, deck):
         keep.update(filter(None, (item.get("image"), item.get("annotated"))))
     removed = 0
     for sub in ("frames", "annotations"):
-        for path in (directory / sub).rglob("*.png"):
+        for path in (directory / sub).rglob("*.*"):
             if path.relative_to(directory).as_posix() not in keep:
                 path.unlink()
                 removed += 1
@@ -375,18 +417,20 @@ class _Renderer:
         self.started = 0.0
         self.log = ""
 
-    def start(self, slide: str) -> bool:
+    def start(self, slide: str, motion: bool = False) -> bool:
         if not self.lock.acquire(blocking=False):
             return False
-        self.running = slide or "all"
+        self.running = (slide or "all") + (" (animation)" if motion else "")
         self.started = time.monotonic()
-        threading.Thread(target=self._run, args=(slide,), daemon=True).start()
+        threading.Thread(target=self._run, args=(slide, motion), daemon=True).start()
         return True
 
-    def _run(self, slide: str) -> None:
+    def _run(self, slide: str, motion: bool) -> None:
         command = [sys.executable, "-m", "vizz.cli", "preview", self.deck]
         if slide:
             command += ["--slide", slide]
+        if motion:
+            command.append("--motion")
         try:
             result = subprocess.run(
                 command, cwd=self.root, capture_output=True, text=True, check=False
@@ -440,7 +484,8 @@ def serve(root: Path, deck: str, port: int) -> None:
                 if directory.resolve() not in target.parents or not target.is_file():
                     self._send(b"not found", "text/plain", 404)
                 else:
-                    self._send(target.read_bytes(), "image/png")
+                    kind = "video/mp4" if target.suffix == ".mp4" else "image/png"
+                    self._send(target.read_bytes(), kind)
             else:
                 self._send(b"not found", "text/plain", 404)
 
@@ -457,6 +502,19 @@ def serve(root: Path, deck: str, port: int) -> None:
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes(base64.b64decode(data))
                 self._json({"path": f"annotations/{body['id']}.png"})
+            elif path == "/api/wording":
+                # Wording edits apply immediately; only ambiguous ones wait for Send.
+                save_feedback(root, deck, [*load_feedback(root, deck), body["item"]])
+                applied = apply_wording(root, deck)
+                slides = sorted({i["slide"] for i in applied if i.get("slide")})
+                if slides:
+                    renderer.start(slides[0] if len(slides) == 1 else "")
+                item = next(
+                    i
+                    for i in load_feedback(root, deck)
+                    if i["id"] == body["item"]["id"]
+                )
+                self._json(item)
             elif path == "/api/submit":
                 submission = submit(root, deck)
                 slides = sorted(
@@ -473,7 +531,9 @@ def serve(root: Path, deck: str, port: int) -> None:
             elif path == "/api/archive":
                 self._json({"archived": archive(root, deck)})
             elif path == "/api/render":
-                started = renderer.start(body.get("slide", ""))
+                started = renderer.start(
+                    body.get("slide", ""), body.get("motion", False)
+                )
                 self._json({"started": started}, 200 if started else 409)
             else:
                 self._send(b"not found", "text/plain", 404)

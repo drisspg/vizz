@@ -198,6 +198,88 @@ def write_gallery(manifest: Path, output: Path) -> Path:
     return index
 
 
+def render_stills(
+    name: str, slide: str, theme: ThemeChoice = ThemeChoice.deck
+) -> tuple[list[dict], Path]:
+    """Capture each pause as a 1080p PNG with animations skipped (no video)."""
+    directory = deck_path(name)
+    manifest = directory / "deck.toml"
+    if not manifest.is_file():
+        raise typer.BadParameter(
+            f"No deck.toml in {directory}; create a deck with 'vizz new NAME'."
+        )
+    scene_name = tomllib.loads(manifest.read_text())["scene"]
+    module = importlib.import_module(f"vizz.presentations.{name}.build")
+    if slide and slide not in module.SLIDES:
+        raise typer.BadParameter(
+            f"Unknown slide {slide!r}; choose: {', '.join(module.SLIDES)}"
+        )
+    output = ROOT / "media" / "review" / name / (slide or "all")
+    if theme != ThemeChoice.deck:
+        output /= theme.value
+    frames = output / "frames"
+    frames.mkdir(parents=True, exist_ok=True)
+    for old in frames.glob("beat-*.png"):
+        old.unlink()
+    beats: list[dict] = []
+    stills: list = []
+    previous = os.environ.get("SLIDE")
+    if slide:
+        os.environ["SLIDE"] = slide
+    else:
+        os.environ.pop("SLIDE", None)
+    try:
+        with tempconfig(
+            {
+                "pixel_width": 1920,
+                "pixel_height": 1080,
+                "media_dir": str(output),
+                "renderer": "cairo",
+                "disable_caching": True,
+                "preview": False,
+            }
+        ):
+            scene = getattr(module, scene_name)()
+            if theme != ThemeChoice.deck:
+                scene.theme = (
+                    NUGGETS_DARK_THEME
+                    if theme == ThemeChoice.dark
+                    else NUGGETS_LIGHT_THEME
+                )
+            scene.beat_log, scene.stills = beats, stills
+            scene.renderer._original_skipping_status = True  # no animation frames
+            scene.setup()
+            scene.construct()
+    finally:
+        if previous is None:
+            os.environ.pop("SLIDE", None)
+        else:
+            os.environ["SLIDE"] = previous
+    if not stills:
+        raise ValueError(f"No pauses in {name}; add next_slide() calls.")
+    for number, image in enumerate(stills, start=1):
+        image.save(frames / f"beat-{number:02d}.png")
+    return beats, frames
+
+
+def write_stills_gallery(beats: list[dict], frames: Path) -> Path:
+    cards = [
+        f'<figure><img src="beat-{number:02d}.png" alt="Beat {number}">'
+        f"<figcaption>Beat {number}: {html.escape(beat.get('notes', ''))}</figcaption></figure>"
+        for number, beat in enumerate(beats, start=1)
+    ]
+    index = frames / "index.html"
+    index.write_text(
+        '<!doctype html><html lang="en"><meta charset="utf-8">'
+        "<title>Vizz pause-state review</title><style>"
+        "body{font:18px system-ui;background:#eee;margin:2rem;max-width:1100px}"
+        "figure{margin:0 0 2rem}img{width:100%;border:1px solid #ccc}"
+        "figcaption{padding:.5rem 0;white-space:pre-wrap}</style>"
+        "<h1>Pause-state review</h1>" + "".join(cards) + "</html>"
+    )
+    return index
+
+
 @app.command()
 def preview(
     name: str,
@@ -205,16 +287,32 @@ def preview(
         "", help="A SLIDES registry key; omit to review the whole deck."
     ),
     theme: ThemeChoice = ThemeChoice.deck,
+    motion: bool = typer.Option(
+        False,
+        "--motion",
+        help="Render low-quality video clips (to review animation) instead of 1080p stills.",
+    ),
 ) -> None:
-    """Render a low-quality HTML/PNG review gallery, isolated from live slides."""
-    beats: list[dict] = []
-    manifest, _ = render_deck(
-        name, slide, Quality.low, preview=True, theme=theme, beat_log=beats
+    """Render a review gallery (1080p stills by default), isolated from live slides."""
+    order = list(importlib.import_module(f"vizz.presentations.{name}.build").SLIDES)
+    if motion:
+        beats: list[dict] = []
+        manifest, _ = render_deck(
+            name, slide, Quality.low, preview=True, theme=theme, beat_log=beats
+        )
+        index = write_gallery(manifest, manifest.parent.parent / "frames")
+        clips = [Path(s["file"]) for s in json.loads(manifest.read_text())["slides"]]
+    else:
+        beats, frames = render_stills(name, slide, theme)
+        index = write_stills_gallery(beats, frames)
+        clips = None
+    # A motion render keeps the sharper stills and just adds playable clips.
+    deck_theme = theme == ThemeChoice.deck
+    kept_stills = (
+        deck_theme and bool(clips) and review.attach_clips(ROOT, name, beats, clips)
     )
-    index = write_gallery(manifest, manifest.parent.parent / "frames")
-    if theme == ThemeChoice.deck:
-        build = importlib.import_module(f"vizz.presentations.{name}.build")
-        review.merge_render(ROOT, name, list(build.SLIDES), beats, index.parent)
+    if deck_theme and not kept_stills:
+        review.merge_render(ROOT, name, order, beats, index.parent, clips=clips)
     typer.echo(f"Review: {index}")
     typer.echo(f"Open: open {index}")
 

@@ -42,8 +42,10 @@ modules. Preserve existing decks' cleanup conventions unless migrating explicitl
 For interactive review, see "Interactive review loop" below.
 
 Preview galleries live in `media/review/<deck>/<slide>/frames/index.html` with
-one PNG per pause. Read every changed pause-state image before reporting success;
-watch the video when reviewing motion. Previews do not replace the full deck's
+one PNG per pause (1080p stills by default, ~3 s/slide; animations skipped).
+Read every changed pause-state image before reporting success. For motion, run
+`uv run vizz preview <deck> --slide <s> --motion` and watch the clip (on the review
+page: *Render animation*, then *Play animation*). Previews do not replace the full deck's
 `slides/` metadata. Run `uv run pytest tests/ -v` when changing the workflow CLI.
 
 ## Interactive review loop (`vizz review`)
@@ -76,10 +78,10 @@ refreshes the page's frames, so re-render with `preview` after code edits.
   Status: `open` (draft until it has `submission`) → `fixed` / `applied` /
   `question` / `wontfix` → `done` (user accepted). Done items get archived to
   `review/archive.json`.
-- **Send to agent** applies wording edits whose `old` text occurs exactly once
-  in the deck's `.py` files (ambiguous → `question`), re-renders those slides,
-  stamps the remaining drafts with a submission id, and appends a `pending`
-  entry to `review/submissions.json`.
+- Wording/notes edits apply immediately (`POST /api/wording`) when their `old`
+  text occurs exactly once in the deck's `.py` files; ambiguous ones become
+  `question` items. **Send to agent** stamps the remaining drafts with a
+  submission id and appends a `pending` entry to `review/submissions.json`.
 - Text boxes come from recorded pauses. `meta_text` and `themed_code` store the
   source string (`source_text`) so wording edits match the code, not the
   uppercased render. Build text with `SlideBase` helpers to keep it editable.

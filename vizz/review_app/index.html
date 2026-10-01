@@ -92,10 +92,13 @@
       <button data-tool="arrow" title="Drag from a thing to where it should go (A)">A · arrow</button>
       <span style="flex:1"></span>
       <span class="meta" id="rendering"></span>
-      <button id="rerender" title="Re-render this slide from the current code">Re-render slide</button>
+      <button id="rerender" title="Re-render this slide as sharp 1080p stills (~3s)">Re-render slide</button>
+      <button id="motion" title="Render this slide as video to review animation (slower, 480p)">Render animation</button>
+      <button id="play" hidden title="Play the animation into this pause">▶ Play animation</button>
     </div>
     <div class="stage" id="stage">
       <img id="frame" alt="">
+      <video id="clip" hidden playsinline style="position:absolute;inset:0;width:100%;border:1px solid var(--rule);background:var(--paper)"></video>
       <svg id="overlay"></svg>
     </div>
     <h3>Speaker notes</h3>
@@ -149,14 +152,14 @@ async function refresh(keepPosition = true) {
   }
   $("deck").textContent = `Vizz review · ${data.deck || ""}`;
   if (data.rendering) {
-    $("rendering").textContent = `re-rendering ${data.rendering}… ${data.render_seconds}s (usually ~20s per slide)`;
+    $("rendering").textContent = `re-rendering ${data.rendering}… ${data.render_seconds}s `;
     wasRendering = data.rendering;
   } else if (wasRendering) {
     $("rendering").textContent = `${wasRendering} updated ✓`;
     const done = wasRendering; wasRendering = "";
     setTimeout(() => { if ($("rendering").textContent.startsWith(done)) $("rendering").textContent = ""; }, 6000);
   }
-  $("rerender").disabled = Boolean(data.rendering);
+  $("rerender").disabled = $("motion").disabled = Boolean(data.rendering);
   const failed = !data.rendering && (data.log || "").startsWith("render failed");
   $("log").textContent = failed ? data.log.slice(-1500) : "";
   renderBanner(data.submissions || []);
@@ -182,7 +185,8 @@ function render() {
   const beat = beats[current];
   $("where").textContent = `${beat.slide} · pause ${beat.index} · ${current + 1}/${beats.length}`;
   const img = $("frame");
-  if (!img.src.endsWith(beat.image)) img.src = `/files/${beat.image}`;
+  if (!img.src.endsWith(beat.image)) { img.src = `/files/${beat.image}`; hideClip(); }
+  $("play").hidden = !beat.clip;
   if (document.activeElement !== $("notes")) $("notes").value = beat.notes || "";
   renderNav(); renderOverlay(); renderChips(); renderLists();
 }
@@ -375,9 +379,8 @@ function editWording(t) {
   dialog.onclose = () => {
     const value = $("newText").value;
     if (dialog.returnValue !== "save" || value === t.text) return;
-    feedback.push({ ...base("wording", "pause"), old: t.text, new: value,
+    applyNow({ ...base("wording", "pause"), old: t.text, new: value,
       marks: [{ type: "box", x0: t.box[0], y0: t.box[1], x1: t.box[2], y1: t.box[3] }] });
-    save();
   };
   dialog.showModal();
   $("newText").focus(); $("newText").select();
@@ -470,8 +473,29 @@ document.querySelectorAll("[data-tool]").forEach(b => b.onclick = () => setTool(
 $("saveNotes").onclick = () => {
   const beat = beats[current], value = $("notes").value;
   if (value === (beat.notes || "")) return;
-  feedback.push({ ...base("notes", "pause"), old: beat.notes || "", new: value });
-  save();
+  applyNow({ ...base("notes", "pause"), old: beat.notes || "", new: value });
+};
+
+// Wording and notes edits go straight into the slide code and re-render; an edit
+// whose text is ambiguous comes back as a question and waits for Send.
+async function applyNow(item) {
+  const response = await fetch("/api/wording", { method: "POST", body: JSON.stringify({ item }) });
+  const result = await response.json();
+  $("rendering").textContent = result.status === "applied" ? "edit applied, re-rendering…" : `edit needs the agent: ${result.reply}`;
+  await refresh();
+  const poll = setInterval(async () => { await refresh(); if (!state.rendering) clearInterval(poll); }, 1000);
+}
+function hideClip() { const v = $("clip"); v.pause(); v.hidden = true; }
+$("play").onclick = () => {
+  const v = $("clip"), beat = beats[current];
+  v.src = `/files/${beat.clip}`; v.hidden = false; v.currentTime = 0; v.play();
+};
+$("clip").onended = () => setTimeout(hideClip, 600);
+$("clip").onclick = hideClip;
+$("motion").onclick = async () => {
+  await fetch("/api/render", { method: "POST", body: JSON.stringify({ slide: beats[current].slide, motion: true }) });
+  refresh();
+  const poll = setInterval(async () => { await refresh(); if (!state.rendering) clearInterval(poll); }, 1000);
 };
 $("rerender").onclick = async () => {
   await fetch("/api/render", { method: "POST", body: JSON.stringify({ slide: beats[current].slide }) });

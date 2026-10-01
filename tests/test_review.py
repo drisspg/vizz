@@ -232,3 +232,17 @@ def test_archive_moves_finished_items_and_prunes_unused_frames(repo):
     assert [i["id"] for i in archived] == ["d"]
     assert not stale.exists() and not done_note.exists()
     assert kept_by_item.exists() and (directory / current).exists()
+
+
+def test_stills_preview_captures_each_pause_at_1080p(repo):
+    manifest = repo / "vizz/presentations/starter/deck.toml"
+    manifest.parent.mkdir(parents=True)
+    manifest.write_text('scene = "StarterDeck"\n')
+    result = runner.invoke(cli.app, ["preview", "starter", "--slide", "title"])
+    assert result.exit_code == 0, result.output
+    state = review.load_state(repo, "starter")
+    beats = state["slides"]["title"]["beats"]
+    assert beats and all(beat["slide"] == "title" for beat in beats)
+    for beat in beats:
+        with Image.open(review.review_dir(repo, "starter") / beat["image"]) as image:
+            assert image.size == (1920, 1080)

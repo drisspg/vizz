@@ -82,12 +82,13 @@ uv run vizz preview my_talk --slide workflow
 open media/review/my_talk/workflow/frames/index.html
 ```
 
-The gallery uses the **last decoded frame of each clip**, avoiding timestamp
-estimates that accidentally capture an unfinished transition or blank ending.
-It includes speaker notes and numbered PNGs for precise feedback: “Beat 2: make
-the dependency arrow point left.” It is a static review artifact, not a live
-file watcher. Re-run after edits. Preview always uses low quality and skips
-reverse-video generation; use a full render for presenting.
+By default the gallery is **1080p stills**: animations are skipped and each
+pause is captured as one PNG (about 3 s per slide). Add `--motion` to render
+low-quality video clips instead when you need to review animation; the gallery
+then uses the last decoded frame of each clip. It includes speaker notes and
+numbered PNGs for precise feedback: "Beat 2: make the dependency arrow point
+left." It is a static review artifact, not a live file watcher. Re-run after
+edits. Use a full render for presenting.
 
 Omit `--slide` to review the whole deck (output under `all/`). Add
 `--theme light` or `--theme dark` for Nuggets variants, saved under an additional
@@ -126,15 +127,15 @@ The page shows every pause of every slide. Everything lands in
 `vizz/presentations/<deck>/review/feedback.json` (commit it with the deck).
 
 1. **Edit wording (T):** click any text on the frame and rewrite it. Speaker
-   notes are editable under the frame.
+   notes are editable under the frame. Edits apply to the code immediately and
+   re-render the slide; only ambiguous text waits for Send as a question.
 2. **Comment:** optionally box an area (B), point at a spot (P), or drag an
    arrow from a thing to where it should go (A). Marks are numbered and attach
    to the next comment. Type free-form text in the right panel and *Add
    comment* (⌘↵). With no marks, pick *This pause*, *This slide*, or *Whole deck*.
    New items are **drafts** until sent.
-3. **Send to agent:** applies wording edits whose exact text appears once in the
-   deck (and re-renders those slides), then hands every draft comment to the
-   agent. The header shows *waiting* → *agent working* → *agent finished*.
+3. **Send to agent:** hands every draft comment (and any ambiguous wording
+   edit) to the agent. The header shows *waiting* → *agent working* → *agent finished*.
 4. **Review the result:** frames refresh as slides re-render; each card shows
    the agent's reply and before/now frames. *Accept* or *Reopen*, then send again.
 5. **Clean up:** *Accept all resolved* marks fixed/applied items done; done items
