@@ -9,6 +9,7 @@ from dataclasses import replace
 from vizz.presentations import components, theme
 from vizz.presentations.ptc_2026_flex_gemm.slides import (
     api,
+    autograd,
     contract,
     coverage,
     how_we_did_it,
@@ -32,6 +33,7 @@ SLIDES = {
     "stack": stack,
     "philox": philox,
     "how_we_did_it": how_we_did_it,
+    "autograd": autograd,
     "status": status,
 }
 

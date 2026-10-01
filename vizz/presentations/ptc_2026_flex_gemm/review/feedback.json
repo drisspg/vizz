@@ -340,12 +340,14 @@
  {
   "id": "cmuk8x6vwhz4",
   "kind": "visual",
-  "status": "open",
+  "status": "fixed",
   "created": "2026-09-27T20:03:09.212Z",
   "slide": "how_we_did_it",
   "beat": 2,
   "image": "frames/how_we_did_it/20260927T181459285957-02.png",
   "text": "I dont love thei either liek we can supprot split-k the fullr educitns e ntoe in teh contrcat why dwe dont an atuograd is a good poitn we chosul mybe jstu ahv eth atb e itsownslide",
-  "submission": "s20260927T200310"
+  "submission": "s20260927T200310",
+  "reply": "Dropped the could-not list (split-K is supportable; full-row reductions are already in the contract slide). New slide after it, \"Why FlexGEMM is forward-only (for now)\": the backward is a prologue, so instead E-prime becomes the epilogue of the GEMM that produces dY (MLP forward/backward kernels), plus the two ways to use it today.",
+  "resolved": "2026-10-01T23:14:42+00:00"
  }
 ]

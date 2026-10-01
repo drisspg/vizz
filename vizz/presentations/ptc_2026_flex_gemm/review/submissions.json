@@ -102,10 +102,13 @@
  {
   "id": "s20260927T200310",
   "created": "2026-09-27T20:03:10+00:00",
-  "status": "pending",
+  "status": "done",
   "items": [
    "cmuk8x6vwhz4"
   ],
-  "applied_wording": []
+  "applied_wording": [],
+  "claimed": "2026-10-01T23:10:22+00:00",
+  "message": "autograd got its own slide; could-not list removed",
+  "finished": "2026-10-01T23:14:44+00:00"
  }
 ]
