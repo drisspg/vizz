@@ -1,24 +1,9 @@
-from manim import LEFT, RIGHT, FadeIn, VGroup
+from manim import DOWN, LEFT, RIGHT, UP, FadeIn, VGroup
 
 from vizz.presentations.components import SlideBase
 from vizz.presentations.ptc_2026_flex_gemm.slides.common import header as common_header
+from vizz.presentations.ptc_2026_flex_gemm.slides.common import kernel
 
-# Hard part -> approach -> landed pytorch/pytorch PRs (main, Aug-Sep 2026).
-SOLVED = [
-    (
-        "reductions in the tile",
-        "N-group reductions; blocked / transposed outputs",
-        "#188739 #191026 #192661",
-    ),
-    (
-        "shape-changing outputs",
-        "SwiGLU M×2N → M×N; packed NVFP4 outputs",
-        "#190158 #191270",
-    ),
-    ("low-precision inputs", "block-scaled MXFP8 / NVFP4 mainloops", "#192839"),
-    ("mixture of experts", "varlen-M grouped GEMM + grouped SwiGLU", "#196318 #196321"),
-    ("picking a config", "Inductor-owned QuACK autotuning", "#196174"),
-]
 # Source: ~/agent_notes/findings/flex_gemm_dsv3_first_user_study.md (split-K),
 # ~/agent_notes/findings/assets/flex_gemm_audit_20260907/feature_gaps.md.
 UNSOLVED = [
@@ -41,45 +26,55 @@ def build(scene: SlideBase) -> None:
     t = scene.theme
     header = common_header(scene, "How we built it, and what we could not do")
 
-    def table(items: list[tuple[str, ...]], color: str, top: float) -> VGroup:
-        rows = VGroup()
-        for index, (key, text, *tag) in enumerate(items):
-            y = top - index * 0.5
-            r = VGroup(
-                scene.meta_text(key, font_size=16, color=color).move_to(
-                    [-6.2, y, 0], aligned_edge=LEFT
-                ),
-                scene.body_text(text, font_size=20).move_to(
-                    [-2.6, y, 0], aligned_edge=LEFT
-                ),
-            )
-            if tag:
-                r.add(
-                    scene.meta_text(tag[0], font_size=13, uppercase=False).move_to(
-                        [4.5, y, 0], aligned_edge=LEFT
-                    )
-                )
-            rows.add(r)
-        return rows
+    def foundation(name: str, color: str, lines: str, tag: str) -> VGroup:
+        card = kernel(scene, name, width=5.6, height=1.1, color=color, font_size=26)
+        label = scene.meta_text(tag, font_size=13, color=color)
+        body = scene.body_text(lines, font_size=20)
+        return VGroup(label, card, body).arrange(DOWN, aligned_edge=LEFT, buff=0.15)
 
-    solved = table(SOLVED, t.accent_success, 1.75)
+    quack = foundation(
+        "QuACK · EpiMod",
+        t.accent_success,
+        "QuACK ships an extensive epilogue-fusion API, EpiMod.\n"
+        "FlexGEMM lowers your PyTorch epilogue into it:\n"
+        "most of FlexGEMM is that lowering.",
+        "built on",
+    )
+    nvgemm = foundation(
+        "NVGEMM",
+        t.accent_secondary,
+        "NVIDIA's CuTeDSL operator API.\n"
+        "Integration started: the same epilogue plan,\n"
+        "vendor-provided mainloops.",
+        "now integrating",
+    )
+    foundations = VGroup(quack, nvgemm).arrange(RIGHT, buff=0.6, aligned_edge=UP)
+    foundations.next_to(header, DOWN, buff=0.45).align_to(header, LEFT)
+
     unsolved_head = scene.meta_text("could not (yet)", color=t.accent_danger)
-    unsolved_head.move_to([-6.2, -1.0, 0], aligned_edge=LEFT)
-    unsolved = table(UNSOLVED, t.accent_danger, -1.55)
+    unsolved = VGroup()
+    for key, text in UNSOLVED:
+        unsolved.add(
+            VGroup(
+                scene.meta_text(key, font_size=15, color=t.accent_danger),
+                scene.body_text(text, font_size=19),
+            ).arrange(RIGHT, buff=0.35)
+        )
+    unsolved.arrange(DOWN, aligned_edge=LEFT, buff=0.18)
+    block = VGroup(unsolved_head, unsolved).arrange(DOWN, aligned_edge=LEFT, buff=0.2)
+    block.next_to(foundations, DOWN, buff=0.55).align_to(header, LEFT)
 
     scene.play(
-        FadeIn(header), FadeIn(solved, shift=RIGHT * 0.1, lag_ratio=0.15), run_time=1.2
+        FadeIn(header),
+        FadeIn(foundations, shift=RIGHT * 0.1, lag_ratio=0.3),
+        run_time=1.0,
     )
     scene.wait(0.2)
     scene.next_slide(
-        notes="how.solved — Each hard part was its own small landed PR: tile-local reductions and their output layouts, shape-changing outputs for SwiGLU and packed fp4, block-scaled inputs, MoE grouped GEMM, and letting Inductor own the autotuning."
+        notes="how.built — QuACK from Tri Dao already has an extensive epilogue-fusion API called EpiMod, and we built most of FlexGEMM on it: the work is lowering an arbitrary PyTorch epilogue into EpiMod. We have also started integrating NVIDIA's CuTeDSL operator API, NVGEMM, so the same epilogue plan can ride on vendor mainloops."
     )
 
-    scene.play(
-        FadeIn(unsolved_head),
-        FadeIn(unsolved, shift=RIGHT * 0.1, lag_ratio=0.15),
-        run_time=0.9,
-    )
+    scene.play(FadeIn(block, shift=RIGHT * 0.1), run_time=0.8)
     scene.wait(0.2)
     scene.next_slide(
         notes="how.unsolved — What we could not do: split-K with a custom epilogue does not exist in QuACK, so skinny GEMMs like an MoE router lose to cuBLAS. Full-row norms do not fit a tile. And there is no automatic backward yet; we made compiled backward raise rather than return silent None gradients."

@@ -28,7 +28,7 @@ def _bar(scene: SlideBase, width: float, color: str, label: str) -> VGroup:
 
 def build(scene: SlideBase) -> None:
     t = scene.theme
-    header = common_header(scene, "Where the win comes from: bytes, not magic")
+    header = common_header(scene, "Where the win comes from: data movement")
 
     equation = punchline(scene, "ΔBytes  =  2 · M · g · N · sizeof(C)", font_size=32)
     legend = scene.meta_text(
@@ -63,10 +63,6 @@ def build(scene: SlideBase) -> None:
         .next_to(fused, DOWN, buff=0.15)
         .align_to(fused, LEFT)
     )
-    schematic = scene.meta_text(
-        "schematic, not to scale", font_size=13, uppercase=False
-    )
-    schematic.next_to(chart, RIGHT, buff=0.3).align_to(chart, DOWN)
 
     scene.play(FadeIn(header), FadeIn(top))
     scene.play(
@@ -74,7 +70,6 @@ def build(scene: SlideBase) -> None:
         GrowFromEdge(unfused, LEFT),
         GrowFromEdge(fused, LEFT),
         FadeIn(penalty_note),
-        FadeIn(schematic),
         run_time=0.8,
     )
     scene.wait(0.2)
@@ -83,9 +78,9 @@ def build(scene: SlideBase) -> None:
     )
 
     caveats = scene.bullet_list(
-        "Small / skinny shapes are launch-bound: fusion can lose",
-        "C may already be hot in L2: less traffic to remove",
-        "Heavy epilogues cost registers and slow the mainloop",
+        "Heavy epilogues cost registers: lower occupancy, slower mainloop",
+        "Epilogue work that the store path can't hide adds to every tile",
+        "The best mainloop tile may be the wrong shape for the epilogue",
         font_size=21,
     )
     caveat_head = scene.meta_text("when it loses", color=t.accent_danger)
@@ -96,5 +91,5 @@ def build(scene: SlideBase) -> None:
     scene.play(FadeIn(caveat_block, shift=UP * 0.1), run_time=0.6)
     scene.wait(0.2)
     scene.next_slide(
-        notes="wins.caveats — Fusion is not free. This is why older Triton epilogue fusion rarely beat cuBLAS plus a standalone kernel, and why dispatch should be able to say no."
+        notes="wins.caveats — Fusion is not free. It loses when the epilogue costs the mainloop: register pressure lowers occupancy, epilogue math that does not overlap the next tile adds directly to runtime, and the tile shape that makes the mainloop fastest may not fit the epilogue, for example a reduction wanting a wider tile_n. This is why older Triton epilogue fusion rarely beat cuBLAS plus a standalone kernel, and why dispatch should be able to say no."
     )

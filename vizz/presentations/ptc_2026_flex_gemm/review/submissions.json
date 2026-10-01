@@ -13,5 +13,99 @@
   "claimed": "2026-09-27T18:37:11+00:00",
   "message": "applied 2 wording edits; 1 question on the problem slide",
   "finished": "2026-09-27T18:38:16+00:00"
+ },
+ {
+  "id": "s20260927T193753",
+  "created": "2026-09-27T19:37:53+00:00",
+  "status": "done",
+  "items": [
+   "cmuk80omkjxu"
+  ],
+  "applied_wording": [],
+  "claimed": "2026-09-27T19:38:42+00:00",
+  "message": "problem slide: C now makes a visible round trip through off-chip HBM",
+  "finished": "2026-09-27T19:40:09+00:00"
+ },
+ {
+  "id": "s20260927T195519",
+  "created": "2026-09-27T19:55:19+00:00",
+  "status": "done",
+  "items": [
+   "cmuk8n3k15xy"
+  ],
+  "applied_wording": [],
+  "claimed": "2026-09-27T19:55:20+00:00",
+  "message": "problem slide: fusion is now animated; wording edits now apply instantly",
+  "finished": "2026-09-27T19:59:00+00:00"
+ },
+ {
+  "id": "s20260927T195548",
+  "created": "2026-09-27T19:55:48+00:00",
+  "status": "done",
+  "items": [
+   "cmuk8npw6vg7"
+  ],
+  "applied_wording": [],
+  "claimed": "2026-09-27T19:59:09+00:00",
+  "message": "kernel/tensor visual language added; used on problem + stack",
+  "finished": "2026-09-27T20:03:13+00:00"
+ },
+ {
+  "id": "s20260927T200008",
+  "created": "2026-09-27T20:00:08+00:00",
+  "status": "done",
+  "items": [
+   "cmuk8t9v8vc6"
+  ],
+  "applied_wording": [],
+  "claimed": "2026-09-27T20:03:21+00:00",
+  "message": "wins caveats rewritten; review frames are now 1080p stills",
+  "finished": "2026-09-27T20:10:13+00:00"
+ },
+ {
+  "id": "s20260927T200055",
+  "created": "2026-09-27T20:00:55+00:00",
+  "status": "done",
+  "items": [
+   "cmuk8uac7uc0"
+  ],
+  "applied_wording": [],
+  "claimed": "2026-09-27T20:11:01+00:00",
+  "message": "results: caveat removed, MXFP8 code example added",
+  "finished": "2026-09-27T20:13:15+00:00"
+ },
+ {
+  "id": "s20260927T200153",
+  "created": "2026-09-27T20:01:53+00:00",
+  "status": "done",
+  "items": [
+   "cmuk8v4n7me2",
+   "cmuk8vk1dw3m"
+  ],
+  "applied_wording": [],
+  "claimed": "2026-09-27T20:13:20+00:00",
+  "message": "stack slide recoloured with backend status; escape hatch moved to Philox",
+  "finished": "2026-09-27T20:15:29+00:00"
+ },
+ {
+  "id": "s20260927T200240",
+  "created": "2026-09-27T20:02:40+00:00",
+  "status": "done",
+  "items": [
+   "cmuk8wjff65a"
+  ],
+  "applied_wording": [],
+  "claimed": "2026-09-27T20:15:33+00:00",
+  "message": "how-we-built-it simplified to QuACK EpiMod + NVGEMM",
+  "finished": "2026-10-01T23:09:38+00:00"
+ },
+ {
+  "id": "s20260927T200310",
+  "created": "2026-09-27T20:03:10+00:00",
+  "status": "pending",
+  "items": [
+   "cmuk8x6vwhz4"
+  ],
+  "applied_wording": []
  }
 ]

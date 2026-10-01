@@ -8,7 +8,7 @@ from vizz.presentations.ptc_2026_flex_gemm.slides.common import header as common
 SUPPORTED = [
     ("torch.mm  ·  torch.addmm", "[M,K] @ [K,N]", "dense linear layers"),
     ("torch.bmm  ·  torch.baddbmm", "[B,M,K] @ [B,K,N]", "batched / per-head"),
-    ("F.scaled_mm", "MXFP8 · NVFP4 block-scaled", "low-precision layers"),
+    ("F.scaled_mm", "MXFP8 · NVFP4 block-scaled", "low-precision dense matmuls"),
     ("F.grouped_mm", "[ΣM,K] @ [E,K,N] + offs", "MoE experts (varlen-M)"),
 ]
 NOT_YET = [
@@ -19,7 +19,7 @@ NOT_YET = [
 
 def build(scene: SlideBase) -> None:
     t = scene.theme
-    header = common_header(scene, "One epilogue API over the GEMMs you already call")
+    header = common_header(scene, "One epilogue API over all the GEMMs")
 
     def row(api: str, shape: str, use: str, color: str) -> VGroup:
         return VGroup(
@@ -43,7 +43,7 @@ def build(scene: SlideBase) -> None:
     rule = Line([-6.2, 1.8, 0], [6.3, 1.8, 0], color=t.divider, stroke_width=1.2)
     footer = (
         scene.body_text(
-            "Same epilogue function, same contract, all lowered to fused QuACK kernels",
+            "Same epilogue function, same semantics, all lowered to fused kernels",
             font_size=22,
             color=t.text,
         )

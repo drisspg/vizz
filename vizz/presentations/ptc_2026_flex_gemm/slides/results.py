@@ -6,6 +6,7 @@ from manim import (
     Create,
     DashedLine,
     FadeIn,
+    FadeOut,
     GrowFromEdge,
     Rectangle,
     SurroundingRectangle,
@@ -13,6 +14,7 @@ from manim import (
 )
 
 from vizz.presentations.components import SlideBase
+from vizz.presentations.ptc_2026_flex_gemm.slides.common import code_block
 from vizz.presentations.ptc_2026_flex_gemm.slides.common import header as common_header
 
 # Source: ~/meta/my_scripts/misc/FLEX_GEMM_TALK.ipynb baked outputs, NVIDIA B200,
@@ -34,6 +36,17 @@ CASES = [
         1.07,
     ),
 ]
+MXFP8_CODE = """
+def relu_to_mxfp8(acc):
+    g = F.relu(acc.float()).view(M, -1, 32)
+    scale = e8m0(g.abs().amax(-1, keepdim=True))   # inline PTX cvt
+    q = (g / scale.float()).view_as(acc).to(torch.float8_e4m3fn)
+    return q, to_blocked(scale.squeeze(-1))
+
+act, act_scale = flex_gemm(F.scaled_mm, (x, w0, sx, sw0), relu_to_mxfp8)
+out = F.scaled_mm(act, w1, act_scale, sw1, ...)    # GEMM 2 consumes it as-is
+"""
+
 BAR_SCALE = 2.6  # scene units per 1.0x speedup
 
 
@@ -123,16 +136,26 @@ def build(scene: SlideBase) -> None:
         notes="results.numerics — The more interesting MXFP8 result is numerics: the scales are computed from the fp32 accumulator in registers, not from a rounded bf16 intermediate. That is only safe to promise because fusion is guaranteed or the compile fails."
     )
 
-    swiglu = VGroup(
-        scene.meta_text("honest caveat", color=t.accent_danger),
-        scene.body_text(
-            "SwiGLU MLP (Qwen3-8B shapes): ~1.10× in isolation, no end-to-end training win yet",
-            font_size=21,
-        ),
-    ).arrange(DOWN, aligned_edge=LEFT, buff=0.1)
-    swiglu.next_to(numerics, DOWN, buff=0.35).align_to(rows, LEFT)
-    scene.play(FadeIn(swiglu, shift=UP * 0.1), run_time=0.5)
+    # Emphasis on the MXFP8 producer: the whole quantizer is the epilogue.
+    code = code_block(
+        scene,
+        "gemm 1 writes mxfp8 activations + scales directly",
+        MXFP8_CODE,
+        font_size=15,
+    )
+    others = VGroup(rows[0], rows[1], baseline, baseline_label, speed_head)
+    scene.play(
+        FadeOut(others),
+        VGroup(mx_row, focus).animate.to_edge(UP, buff=1.45).align_to(rows, LEFT),
+        numerics.animate.next_to(header, DOWN, buff=1.4).align_to(rows, LEFT),
+        run_time=0.6,
+    )
+    code.next_to(numerics, DOWN, buff=0.35).align_to(rows, LEFT)
+    if code.get_bottom()[1] < footer.get_top()[1] + 0.1:
+        code.scale_to_fit_height(numerics.get_bottom()[1] - footer.get_top()[1] - 0.5)
+        code.next_to(numerics, DOWN, buff=0.35).align_to(rows, LEFT)
+    scene.play(FadeIn(code, shift=UP * 0.1), run_time=0.5)
     scene.wait(0.2)
     scene.next_slide(
-        notes="results.caveat — In TorchTitan the SwiGLU fusion wins as a microbenchmark but not end to end: Amdahl plus other effects we are still debugging."
+        notes="results.mxfp8 — This is the code for that row. The epilogue is the MXFP8 quantizer in plain PyTorch: ReLU, a 32-wide amax, an E8M0 scale via one inline PTX instruction, the E4M3 cast, and the blocked scale layout. GEMM 1 writes exactly what GEMM 2 consumes. Because fusion is guaranteed, the scales come from the fp32 accumulator, which is why it is bit-exact."
     )

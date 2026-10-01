@@ -10,11 +10,17 @@ Semantic map (identical on every slide):
 from manim import (
     DOWN,
     LEFT,
+    PI,
+    RIGHT,
+    UP,
     Arrow,
     DashedLine,
     DashedVMobject,
+    Line,
     ManimColor,
+    Rectangle,
     RoundedRectangle,
+    Triangle,
     VGroup,
     interpolate_color,
 )
@@ -132,3 +138,104 @@ def code_block(scene: SlideBase, title: str, code: str, font_size: int) -> VGrou
     label = scene.meta_text(title, font_size=15)
     block = scene.themed_code(code, font_size=font_size)
     return VGroup(label, block).arrange(DOWN, aligned_edge=LEFT, buff=0.15)
+
+
+# Visual language for compute vs memory, shared by every slide:
+#   kernel(): a launch. Solid frame with a dark header strip reading "KERNEL".
+#   tensor(): data in memory. Light matrix-ruled rectangle, never a header.
+
+
+def kernel(
+    scene: SlideBase,
+    label: str,
+    *,
+    width: float,
+    height: float = 0.95,
+    color: str | None = None,
+    font_size: int = 22,
+) -> VGroup:
+    """A GPU kernel launch; `color` (e.g. green for fused) tints frame and strip."""
+    t = scene.theme
+    ink = color or t.text
+    frame = RoundedRectangle(
+        corner_radius=CORNER,
+        width=width,
+        height=height,
+        stroke_color=ink,
+        stroke_width=1.6,
+        fill_color=tint(scene, color, 0.14) if color else t.panel_fill,
+        fill_opacity=1,
+    )
+    strip_height = 0.24
+    strip = Rectangle(
+        width=width, height=strip_height, stroke_width=0, fill_color=ink, fill_opacity=1
+    ).align_to(frame, UP)
+    tag = scene.meta_text("kernel", font_size=11, color=t.background)
+    tag.move_to(strip).align_to(strip, LEFT).shift(RIGHT * 0.12)
+    launch = Triangle(fill_color=t.background, fill_opacity=1, stroke_width=0).rotate(
+        -PI / 2
+    )
+    launch.scale_to_fit_height(0.11).move_to(strip).align_to(strip, RIGHT).shift(
+        LEFT * 0.12
+    )
+    text = scene.body_text(label, font_size=font_size)
+    if text.width > width - 0.3:
+        text.scale_to_fit_width(width - 0.3)
+    text.move_to(frame).shift(DOWN * strip_height / 2)
+    return VGroup(frame, strip, tag, launch, text)
+
+
+def tensor(
+    scene: SlideBase,
+    label: str,
+    *,
+    width: float,
+    height: float = 0.8,
+    color: str | None = None,
+    font_size: int = 22,
+) -> VGroup:
+    """A tensor in memory: ruled like a matrix, lighter than a kernel."""
+    t = scene.theme
+    stroke = color or t.muted_text
+    frame = Rectangle(
+        width=width,
+        height=height,
+        stroke_color=stroke,
+        stroke_width=1.2,
+        fill_color=tint(scene, color, 0.16) if color else t.background,
+        fill_opacity=1,
+    )
+    rules = VGroup(
+        *[
+            Line(
+                frame.get_corner(UP + LEFT) + DOWN * height * k / 4,
+                frame.get_corner(UP + RIGHT) + DOWN * height * k / 4,
+                stroke_color=stroke,
+                stroke_width=0.6,
+                stroke_opacity=0.35,
+            )
+            for k in (1, 2, 3)
+        ],
+        *[
+            Line(
+                frame.get_corner(UP + LEFT) + RIGHT * width * k / 5,
+                frame.get_corner(DOWN + LEFT) + RIGHT * width * k / 5,
+                stroke_color=stroke,
+                stroke_width=0.6,
+                stroke_opacity=0.35,
+            )
+            for k in (1, 2, 3, 4)
+        ],
+    )
+    text = scene.body_text(label, font_size=font_size)
+    plate = RoundedRectangle(
+        corner_radius=0.03,
+        width=text.width + 0.2,
+        height=text.height + 0.12,
+        stroke_width=0,
+        fill_color=frame.get_fill_color(),
+        fill_opacity=1,
+    )
+    text.move_to(frame)
+    plate.move_to(text)
+    return VGroup(frame, rules, plate, text)

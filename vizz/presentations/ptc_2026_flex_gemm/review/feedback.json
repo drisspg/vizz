@@ -70,5 +70,282 @@
    }
   ],
   "reply": "replaced in vizz/presentations/ptc_2026_flex_gemm/slides/problem.py"
+ },
+ {
+  "id": "cmuk80omkjxu",
+  "kind": "visual",
+  "status": "done",
+  "created": "2026-09-27T19:37:52.556Z",
+  "slide": "problem",
+  "beat": 1,
+  "image": "frames/problem/20260927T183933695525-01.png",
+  "text": "I wonder whats liek a more roundabout way showing that the otutp of the gemm has to do mor ework going to main n emery whish c sislweor then get slaoded back fo rthe epilogue kernel;",
+  "marks": [
+   {
+    "type": "box",
+    "x0": 0.22603922814623967,
+    "y0": 0.5592324117736026,
+    "x1": 0.571691562661606,
+    "y1": 0.8260081688222408
+   }
+  ],
+  "annotated": "annotations/cmuk80omkjxu.png",
+  "submission": "s20260927T193753",
+  "reply": "Kernels now sit on top and C detours down into an HBM · off-chip band and back up (red dashed write C / read C); fused beat leaves an empty C slot in the band.",
+  "resolved": "2026-09-27T19:40:08+00:00"
+ },
+ {
+  "id": "cmuk8n3k15xy",
+  "kind": "visual",
+  "status": "open",
+  "created": "2026-09-27T19:55:18.337Z",
+  "slide": "problem",
+  "beat": 2,
+  "image": "frames/problem/20260927T195503518002-02.png",
+  "text": "maybe we jsut loke remove this or liek in teh naiamtion (which I cant really) see iwe show how liek animate thsi write being fused into and the 2 ekrnls being liek fused away",
+  "marks": [
+   {
+    "type": "arrow",
+    "x0": 0.07059570745373449,
+    "y0": 0.6765697392721911,
+    "x1": 0.2039315153802822,
+    "y1": 0.7948156187819669
+   }
+  ],
+  "annotated": "annotations/cmuk8n3k15xy.png",
+  "submission": "s20260927T195519"
+ },
+ {
+  "id": "cmuk8npw6vg7",
+  "kind": "visual",
+  "status": "done",
+  "created": "2026-09-27T19:55:47.286Z",
+  "slide": "problem",
+  "beat": 1,
+  "image": "frames/problem/20260927T195503518002-01.png",
+  "text": "I want a stronger visual langauge for what kernels I liek lets writes we coudlamek thsi consitnat then teh nex tslides kenrel can have the same kernel",
+  "marks": [
+   {
+    "type": "pin",
+    "x": 0.21781423582252882,
+    "y": 0.6353774085928687
+   }
+  ],
+  "annotated": "annotations/cmuk8npw6vg7.png",
+  "submission": "s20260927T195548",
+  "reply": "New shared glyphs in slides/common.py: kernel() = solid frame with a dark KERNEL strip and launch mark (green when fused); tensor() = light matrix-ruled rectangle for data in memory. Problem slide uses both (D now lives in the HBM band too); the stack slide shows the fused result as a green kernel. Other slides can reuse them.",
+  "resolved": "2026-09-27T20:03:12+00:00"
+ },
+ {
+  "id": "cmuk8oc4vwew",
+  "kind": "wording",
+  "status": "done",
+  "created": "2026-09-27T19:56:16.111Z",
+  "slide": "coverage",
+  "beat": 1,
+  "image": "frames/coverage/20260927T181459285957-01.png",
+  "old": "One epilogue API over the GEMMs you already call",
+  "new": "One epilogue API over all the GEMMs",
+  "marks": [
+   {
+    "type": "box",
+    "x0": 0.0422,
+    "y0": 0.075,
+    "x1": 0.9618,
+    "y1": 0.1417
+   }
+  ],
+  "reply": "replaced in vizz/presentations/ptc_2026_flex_gemm/slides/coverage.py"
+ },
+ {
+  "id": "cmuk8opo2l2t",
+  "kind": "wording",
+  "status": "done",
+  "created": "2026-09-27T19:56:33.650Z",
+  "slide": "coverage",
+  "beat": 1,
+  "image": "frames/coverage/20260927T195621273280-01.png",
+  "old": "Same epilogue function, same contract, all lowered to fused QuACK kernels",
+  "new": "Same epilogue function, same contract, all lowered to fused kernels",
+  "marks": [
+   {
+    "type": "box",
+    "x0": 0.0641,
+    "y0": 0.6242,
+    "x1": 0.7474,
+    "y1": 0.6605
+   }
+  ],
+  "reply": "replaced in vizz/presentations/ptc_2026_flex_gemm/slides/coverage.py"
+ },
+ {
+  "id": "cmuk8pvev5bz",
+  "kind": "wording",
+  "status": "done",
+  "created": "2026-09-27T19:57:27.751Z",
+  "slide": "coverage",
+  "beat": 1,
+  "image": "frames/coverage/20260927T195654437341-01.png",
+  "old": "low-precision layers",
+  "new": "low-precision dense matmuls",
+  "marks": [
+   {
+    "type": "box",
+    "x0": 0.6898,
+    "y0": 0.4574,
+    "x1": 0.8618,
+    "y1": 0.4901
+   }
+  ],
+  "reply": "replaced in vizz/presentations/ptc_2026_flex_gemm/slides/coverage.py"
+ },
+ {
+  "id": "cmuk8qiitnlu",
+  "kind": "wording",
+  "status": "done",
+  "created": "2026-09-27T19:57:57.701Z",
+  "slide": "coverage",
+  "beat": 1,
+  "image": "frames/coverage/20260927T195734304235-01.png",
+  "old": "Same epilogue function, same contract, all lowered to fused kernels",
+  "new": "Same epilogue function, same semantics, all lowered to fused kernels",
+  "marks": [
+   {
+    "type": "box",
+    "x0": 0.0641,
+    "y0": 0.6242,
+    "x1": 0.6771,
+    "y1": 0.6605
+   }
+  ],
+  "reply": "replaced in vizz/presentations/ptc_2026_flex_gemm/slides/coverage.py"
+ },
+ {
+  "id": "cmuk8r4xzcpi",
+  "kind": "wording",
+  "status": "done",
+  "created": "2026-09-27T19:58:26.759Z",
+  "slide": "wins",
+  "beat": 1,
+  "image": "frames/wins/20260927T181459285957-01.png",
+  "old": "Where the win comes from: bytes, not magic",
+  "new": "Where the win comes from: data movement",
+  "marks": [
+   {
+    "type": "box",
+    "x0": 0.0422,
+    "y0": 0.075,
+    "x1": 0.8584,
+    "y1": 0.1417
+   }
+  ],
+  "reply": "replaced in vizz/presentations/ptc_2026_flex_gemm/slides/wins.py"
+ },
+ {
+  "id": "cmuk8rzdc4db",
+  "kind": "wording",
+  "status": "done",
+  "created": "2026-09-27T19:59:06.192Z",
+  "slide": "wins",
+  "beat": 1,
+  "image": "frames/wins/20260927T195838241630-01.png",
+  "old": "schematic, not to scale",
+  "new": "",
+  "marks": [
+   {
+    "type": "box",
+    "x0": 0.8269,
+    "y0": 0.6111,
+    "x1": 0.9877,
+    "y1": 0.6312
+   }
+  ],
+  "reply": "replaced in vizz/presentations/ptc_2026_flex_gemm/slides/wins.py"
+ },
+ {
+  "id": "cmuk8t9v8vc6",
+  "kind": "visual",
+  "status": "fixed",
+  "created": "2026-09-27T20:00:06.452Z",
+  "slide": "wins",
+  "beat": 2,
+  "image": "frames/wins/20260927T195838241630-02.png",
+  "text": "the first line doenst maek sense to me; liek these shoudl be theroitcal the last one makes sense bu tteh first 2 doenst maek sense to my whtese woudl be slwoer",
+  "marks": [
+   {
+    "type": "box",
+    "x0": 0.16593406442772976,
+    "y0": 0.6783157113368947,
+    "x1": 0.7424892127936613,
+    "y1": 1
+   }
+  ],
+  "annotated": "annotations/cmuk8t9v8vc6.png",
+  "submission": "s20260927T200008",
+  "reply": "Replaced with three real ways fusion can lose: register pressure (lower occupancy), epilogue work the store path cannot hide, and mainloop tile shape that does not suit the epilogue. Removed the empty schematic label (an empty wording edit would crash the render; those now go to the agent).",
+  "resolved": "2026-09-27T20:10:12+00:00"
+ },
+ {
+  "id": "cmuk8uac7uc0",
+  "kind": "visual",
+  "status": "fixed",
+  "created": "2026-09-27T20:00:53.719Z",
+  "slide": "results",
+  "beat": 3,
+  "image": "frames/results/20260927T181459285957-03.png",
+  "text": "lets deltee ht hoenst cavet part its not helpful; also we shoudl liek idk this one needs so em pasis maybe another lik code example or osemthign idk",
+  "submission": "s20260927T200055",
+  "reply": "Removed the SwiGLU caveat beat. Beat 3 now zooms in on the MXFP8 row: other rows fade, the bit-exact numerics stay, and a code block shows the relu_to_mxfp8 epilogue writing E4M3 + blocked E8M0 scales that GEMM 2 consumes as-is.",
+  "resolved": "2026-09-27T20:13:14+00:00"
+ },
+ {
+  "id": "cmuk8v4n7me2",
+  "kind": "visual",
+  "status": "fixed",
+  "created": "2026-09-27T20:01:32.995Z",
+  "slide": "stack",
+  "beat": 2,
+  "image": "frames/stack/20260927T181459285957-02.png",
+  "text": "overall we need a few more colors ithinik this is a pretty blandlooking slide alsoneets lnto say say AMD we cna metnion that texists but it needs some love to get more fpermant main loop and ensure fusion is a srobust",
+  "submission": "s20260927T200153",
+  "reply": "Stack slide recoloured: numbered pipeline steps (amber compiler stages, green kernel), backends as colour-coded status cards: QuACK shipping (green), NVGEMM in progress (amber), Triton needs love (red) with: exists, the path to AMD, needs a faster mainloop and more robust fusion.",
+  "resolved": "2026-09-27T20:15:26+00:00"
+ },
+ {
+  "id": "cmuk8vk1dw3m",
+  "kind": "visual",
+  "status": "fixed",
+  "created": "2026-09-27T20:01:52.946Z",
+  "slide": "stack",
+  "beat": 2,
+  "image": "frames/stack/20260927T200146308787-02.png",
+  "text": "mayb ew moethe escape hatchjsut to philxo?",
+  "submission": "s20260927T200153",
+  "reply": "Moved the inline_asm escape-hatch line off the stack slide and onto the Philox slide, under the one-kernel tagline.",
+  "resolved": "2026-09-27T20:15:27+00:00"
+ },
+ {
+  "id": "cmuk8wjff65a",
+  "kind": "visual",
+  "status": "fixed",
+  "created": "2026-09-27T20:02:38.811Z",
+  "slide": "how_we_did_it",
+  "beat": 1,
+  "image": "frames/how_we_did_it/20260927T181459285957-01.png",
+  "text": "im like nati on this lslide for fiw we can baiscayly jsut say that quack is a very extenisve api fo repliouge fusion called EpiMod that we build much ofh tis on and then we also started to inegart the cutedsl operator apie called nvgemm",
+  "submission": "s20260927T200240",
+  "reply": "Replaced the PR table with two foundations: built on QuACK EpiMod (extensive epilogue-fusion API; FlexGEMM is mostly the lowering into it) and now integrating NVIDIA NVGEMM (CuTeDSL operator API). Kept the could-not-yet list as beat 2.",
+  "resolved": "2026-10-01T23:09:37+00:00"
+ },
+ {
+  "id": "cmuk8x6vwhz4",
+  "kind": "visual",
+  "status": "open",
+  "created": "2026-09-27T20:03:09.212Z",
+  "slide": "how_we_did_it",
+  "beat": 2,
+  "image": "frames/how_we_did_it/20260927T181459285957-02.png",
+  "text": "I dont love thei either liek we can supprot split-k the fullr educitns e ntoe in teh contrcat why dwe dont an atuograd is a good poitn we chosul mybe jstu ahv eth atb e itsownslide",
+  "submission": "s20260927T200310"
  }
 ]

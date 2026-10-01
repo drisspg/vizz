@@ -40,6 +40,10 @@ def build(scene: SlideBase) -> None:
         scene.meta_text(
             "own counter stream, not torch.Generator · sm100a/sm103a", font_size=13
         ),
+        scene.body_text(
+            "Escape hatch: inline_asm_elementwise lowers straight into the epilogue",
+            font_size=18,
+        ),
     ).arrange(DOWN, aligned_edge=LEFT, buff=0.1)
     facts.next_to(code, DOWN, buff=0.3).align_to(code, LEFT)
 
