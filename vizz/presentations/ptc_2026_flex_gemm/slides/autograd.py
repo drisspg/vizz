@@ -1,5 +1,4 @@
 from manim import (
-    DOWN,
     LEFT,
     RIGHT,
     UP,
@@ -20,33 +19,51 @@ from vizz.presentations.ptc_2026_flex_gemm.slides.common import header as common
 
 # Adapted from FusedReluMLPFunction in
 # ~/obsidian/Presentations/flex_gemm/flex_gemm_presentation_model_context.md.
+# Named epilogues keep lines short, so the code can be set larger.
 CODE = """
 class ReluMLP(torch.autograd.Function):
     @staticmethod
     def forward(ctx, x, w1, w2):
-        h, pre = flex_gemm(torch.mm, (x, w1), lambda acc: (acc.relu(), acc))
+        relu_aux = lambda acc: (acc.relu(), acc)
+        h, pre = flex_gemm(torch.mm, (x, w1), relu_aux)
         ctx.save_for_backward(x, w1, w2, pre)
         return h @ w2
 
     @staticmethod
     def backward(ctx, dy):
         x, w1, w2, pre = ctx.saved_tensors
-        dpre = flex_gemm(torch.mm, (dy, w2.T), lambda acc: acc * (pre > 0))
+        relu_grad = lambda acc: acc * (pre > 0)
+        dpre = flex_gemm(torch.mm, (dy, w2.T), relu_grad)
         return dpre @ w1.T, x.T @ dpre, pre.relu().T @ dy
 
 y = ReluMLP.apply(x, w1, w2)
 """
-# Paragraph line indices (blank lines count).
-FORWARD, BACKWARD, USE = range(6), range(7, 12), 13
-FUSED_FWD, FUSED_BWD = 3, 10
+SOURCE = CODE.strip().splitlines()
+
+
+def _line(fragment: str) -> int:
+    """Paragraph line index of the first source line containing `fragment`."""
+    return next(i for i, text in enumerate(SOURCE) if fragment in text)
+
+
+FORWARD = range(_line("def forward") - 1, _line("return h @ w2") + 1)
+FORWARD = range(FORWARD.stop)
+BACKWARD = range(_line("def backward") - 1, _line("return dpre") + 1)
+USE = _line("ReluMLP.apply")
+FUSED_FWD = (_line("relu_aux = "), _line("flex_gemm(torch.mm, (x, w1)"))
+FUSED_BWD = (_line("relu_grad = "), _line("flex_gemm(torch.mm, (dy"))
 
 
 def build(scene: SlideBase) -> None:
     t = scene.theme
     header = common_header(scene, "Training: wrap it in autograd")
     code = code_block(scene, "forward-only today: you write the backward", CODE, 15)
-    code.scale_to_fit_width(9.6)
-    code.next_to(header, DOWN, buff=0.7).align_to(header, LEFT)
+    # Fill the slide: as large as fits beside the margin notes, centred vertically.
+    code.scale_to_fit_width(10.0)
+    top, bottom = header.get_bottom()[1] - 0.35, -3.75
+    if code.height > top - bottom:
+        code.scale_to_fit_height(top - bottom)
+    code.move_to([0, (top + bottom) / 2, 0]).align_to(header, LEFT)
     label, block = code
     background, lines = block[0], block.code_lines
     for line in lines:
@@ -89,9 +106,10 @@ def build(scene: SlideBase) -> None:
             )
         return bands
 
-    def note(line_index: int, text: str, color: str) -> VGroup:
+    def note(line_index: tuple[int, ...], text: str, color: str) -> VGroup:
         tag = scene.meta_text(text, font_size=13, color=color)
-        tag.next_to(block, RIGHT, buff=0.55).set_y(lines[line_index].get_y())
+        y = sum(lines[i].get_y() for i in line_index) / len(line_index)
+        tag.next_to(block, RIGHT, buff=0.55).set_y(y)
         tick = Line(
             [block.get_right()[0] + 0.05, tag.get_y(), 0],
             tag.get_left() + LEFT * 0.1,
@@ -104,7 +122,7 @@ def build(scene: SlideBase) -> None:
         note(FUSED_FWD, "relu fused\npre-act as aux", t.accent_success),
         note(FUSED_BWD, "relu′ fused into\nthe dgrad epilogue", t.accent_success),
     )
-    focus = veil({FUSED_FWD, FUSED_BWD, USE})
+    focus = veil({*FUSED_FWD, *FUSED_BWD, USE})
     scene.play(FadeIn(focus), run_time=0.6)
     scene.play(
         LaggedStart(
@@ -123,7 +141,7 @@ def build(scene: SlideBase) -> None:
 
     # Use it: the veil slides onto the class, and the one-liner arrives.
     usage = note(
-        USE, "drop-in: trains like\nLinear → ReLU → Linear", t.accent_secondary
+        (USE,), "drop-in: trains like\nLinear → ReLU → Linear", t.accent_secondary
     )
     scene.play(
         Transform(focus, veil({USE})),
