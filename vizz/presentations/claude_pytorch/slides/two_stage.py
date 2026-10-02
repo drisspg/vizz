@@ -20,7 +20,7 @@ STAGE2 = [
     "on: workflow_run (code from main)",
     "environment: bedrock · issues: write",
     "re-validates ^[0-9]+$",
-    "Claude + 5 GitHub tools",
+    "Claude reads the issue via 5 tools",
 ]
 
 
@@ -39,7 +39,7 @@ def _column(scene: SlideBase, title: str, sub: str, lines: list[str], color: str
 
 def build(scene: SlideBase) -> None:
     t = scene.theme
-    head = header(scene, "Untrusted input never meets a write token")
+    head = header(scene, "Untrusted code never holds the credentials")
     sub = (
         scene.meta_text("issue triage · two GitHub Actions workflows")
         .next_to(head, DOWN, buff=0.3)
@@ -75,7 +75,7 @@ def build(scene: SlideBase) -> None:
     scene.play(Create(a1), FadeIn(artifact), Create(a2), FadeIn(stage2), run_time=0.8)
     scene.wait(0.2)
     scene.next_slide(
-        notes="two_stage.privileged — The first version of triage was one job with Bedrock credentials triggered by issues: opened. A day later we split it. Stage 1 runs in the issue author's context, has no secrets, and does one thing: write the issue number to an artifact. Stage 2 is triggered by workflow_run, so its code always comes from main. It holds the bedrock environment and issues: write, and it re-validates the one number it received. The same split is used by the hardened PR review, Green Light, and ao's CI-failure bot."
+        notes="two_stage.privileged — The first version of triage was one job with Bedrock credentials triggered by issues: opened. A day later we split it. Stage 1 runs in the issue author's context, has no secrets, and does one thing: write the issue number to an artifact. Stage 2 is triggered by workflow_run, so its code always comes from main. It holds the bedrock environment and issues: write, and it re-validates the one number it received. Claude still reads the issue body, so prompt injection is not gone; what the split removes is untrusted code running next to credentials. The injection risk is handled by the next slide: five tools and hooks. The same split is used by the hardened PR review, Green Light, and ao's CI-failure bot."
     )
     scene.play(FadeIn(quote, shift=UP * 0.1), FadeIn(source), run_time=0.6)
     scene.wait(0.2)

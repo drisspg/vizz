@@ -26,7 +26,7 @@
 - Pipeline: comment → gate → `environment: bedrock` → GitHub OIDC → AWS role → Bedrock → claude-code-action → reply / public log / usage row.
 - Beat 1: gate checks (org, mention, OWNER/MEMBER/COLLABORATOR, write access API check). Beat 2: no API keys: OIDC → role scoped to `repo:<org>/<repo>:environment:bedrock`, env deploys from main only. Beat 3: outputs: reply, public S3 log, ClickHouse row.
 
-## two_stage — "Untrusted input never meets a write token"
+## two_stage — "Untrusted code never holds the credentials" (stage 2 still reads the issue body via 5 tools; injection is handled by guardrails)
 - Issue triage: stage 1 (`issues: opened`, contents: read, no secrets, 2 min, writes `issue_number.txt`) → artifact → stage 2 (`workflow_run` from main, bedrock env, `issues: write`, re-validates).
 - Beat 1: stage 1. Beat 2: artifact + stage 2. Beat 3: quote: "DO NOT add this workflow as a required status check: a prompt injection could then fail it deliberately to block every merge."
 
