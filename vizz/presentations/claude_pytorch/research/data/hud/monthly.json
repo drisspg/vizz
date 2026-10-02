@@ -1,0 +1,308 @@
+[
+  {
+    "actors": 1,
+    "cat": "bot_mention",
+    "m": 1767225600000,
+    "n": 3
+  },
+  {
+    "actors": 4,
+    "cat": "human_mention",
+    "m": 1767225600000,
+    "n": 16
+  },
+  {
+    "actors": 30,
+    "cat": "issue_triage",
+    "m": 1767225600000,
+    "n": 47
+  },
+  {
+    "actors": 1,
+    "cat": "manual_dispatch",
+    "m": 1767225600000,
+    "n": 1
+  },
+  {
+    "actors": 1,
+    "cat": "bot_mention",
+    "m": 1769904000000,
+    "n": 48
+  },
+  {
+    "actors": 14,
+    "cat": "human_mention",
+    "m": 1769904000000,
+    "n": 81
+  },
+  {
+    "actors": 207,
+    "cat": "issue_triage",
+    "m": 1769904000000,
+    "n": 383
+  },
+  {
+    "actors": 1,
+    "cat": "autorevert_advisor",
+    "m": 1772323200000,
+    "n": 161
+  },
+  {
+    "actors": 1,
+    "cat": "bot_mention",
+    "m": 1772323200000,
+    "n": 77
+  },
+  {
+    "actors": 41,
+    "cat": "human_mention",
+    "m": 1772323200000,
+    "n": 272
+  },
+  {
+    "actors": 275,
+    "cat": "issue_triage",
+    "m": 1772323200000,
+    "n": 527
+  },
+  {
+    "actors": 1,
+    "cat": "manual_dispatch",
+    "m": 1772323200000,
+    "n": 5
+  },
+  {
+    "actors": 1,
+    "cat": "autorevert_advisor",
+    "m": 1775001600000,
+    "n": 1260
+  },
+  {
+    "actors": 1,
+    "cat": "bot_mention",
+    "m": 1775001600000,
+    "n": 69
+  },
+  {
+    "actors": 1,
+    "cat": "drci_advisor",
+    "m": 1775001600000,
+    "n": 8
+  },
+  {
+    "actors": 43,
+    "cat": "human_mention",
+    "m": 1775001600000,
+    "n": 656
+  },
+  {
+    "actors": 233,
+    "cat": "issue_triage",
+    "m": 1775001600000,
+    "n": 589
+  },
+  {
+    "actors": 2,
+    "cat": "manual_dispatch",
+    "m": 1775001600000,
+    "n": 316
+  },
+  {
+    "actors": 1,
+    "cat": "autorevert_advisor",
+    "m": 1777593600000,
+    "n": 1353
+  },
+  {
+    "actors": 1,
+    "cat": "bot_mention",
+    "m": 1777593600000,
+    "n": 73
+  },
+  {
+    "actors": 1,
+    "cat": "drci_advisor",
+    "m": 1777593600000,
+    "n": 47
+  },
+  {
+    "actors": 59,
+    "cat": "human_mention",
+    "m": 1777593600000,
+    "n": 1502
+  },
+  {
+    "actors": 171,
+    "cat": "issue_triage",
+    "m": 1777593600000,
+    "n": 502
+  },
+  {
+    "actors": 2,
+    "cat": "manual_dispatch",
+    "m": 1777593600000,
+    "n": 377
+  },
+  {
+    "actors": 1,
+    "cat": "autorevert_advisor",
+    "m": 1780272000000,
+    "n": 758
+  },
+  {
+    "actors": 1,
+    "cat": "bot_mention",
+    "m": 1780272000000,
+    "n": 61
+  },
+  {
+    "actors": 1,
+    "cat": "drci_advisor",
+    "m": 1780272000000,
+    "n": 4542
+  },
+  {
+    "actors": 63,
+    "cat": "human_mention",
+    "m": 1780272000000,
+    "n": 2179
+  },
+  {
+    "actors": 242,
+    "cat": "issue_triage",
+    "m": 1780272000000,
+    "n": 479
+  },
+  {
+    "actors": 3,
+    "cat": "manual_dispatch",
+    "m": 1780272000000,
+    "n": 159
+  },
+  {
+    "actors": 1,
+    "cat": "autorevert_advisor",
+    "m": 1782864000000,
+    "n": 1037
+  },
+  {
+    "actors": 1,
+    "cat": "bot_mention",
+    "m": 1782864000000,
+    "n": 38
+  },
+  {
+    "actors": 1,
+    "cat": "drci_advisor",
+    "m": 1782864000000,
+    "n": 11823
+  },
+  {
+    "actors": 65,
+    "cat": "human_mention",
+    "m": 1782864000000,
+    "n": 919
+  },
+  {
+    "actors": 233,
+    "cat": "issue_triage",
+    "m": 1782864000000,
+    "n": 590
+  },
+  {
+    "actors": 1,
+    "cat": "manual_dispatch",
+    "m": 1782864000000,
+    "n": 9
+  },
+  {
+    "actors": 1,
+    "cat": "autorevert_advisor",
+    "m": 1785542400000,
+    "n": 22726
+  },
+  {
+    "actors": 1,
+    "cat": "bot_mention",
+    "m": 1785542400000,
+    "n": 26
+  },
+  {
+    "actors": 1,
+    "cat": "drci_advisor",
+    "m": 1785542400000,
+    "n": 8145
+  },
+  {
+    "actors": 62,
+    "cat": "human_mention",
+    "m": 1785542400000,
+    "n": 951
+  },
+  {
+    "actors": 255,
+    "cat": "issue_triage",
+    "m": 1785542400000,
+    "n": 594
+  },
+  {
+    "actors": 2,
+    "cat": "manual_dispatch",
+    "m": 1785542400000,
+    "n": 8
+  },
+  {
+    "actors": 1,
+    "cat": "autorevert_advisor",
+    "m": 1788220800000,
+    "n": 1774
+  },
+  {
+    "actors": 1,
+    "cat": "bot_mention",
+    "m": 1788220800000,
+    "n": 33
+  },
+  {
+    "actors": 1,
+    "cat": "drci_advisor",
+    "m": 1788220800000,
+    "n": 8264
+  },
+  {
+    "actors": 56,
+    "cat": "human_mention",
+    "m": 1788220800000,
+    "n": 2188
+  },
+  {
+    "actors": 272,
+    "cat": "issue_triage",
+    "m": 1788220800000,
+    "n": 678
+  },
+  {
+    "actors": 1,
+    "cat": "autorevert_advisor",
+    "m": 1790812800000,
+    "n": 16
+  },
+  {
+    "actors": 1,
+    "cat": "drci_advisor",
+    "m": 1790812800000,
+    "n": 366
+  },
+  {
+    "actors": 13,
+    "cat": "human_mention",
+    "m": 1790812800000,
+    "n": 25
+  },
+  {
+    "actors": 14,
+    "cat": "issue_triage",
+    "m": 1790812800000,
+    "n": 64
+  }
+]

@@ -1,0 +1,93 @@
+[
+  {
+    "actors": 1428,
+    "cost": 57308,
+    "first": 1769558400000,
+    "n": 76825,
+    "repo": "pytorch/pytorch"
+  },
+  {
+    "actors": 6,
+    "cost": 13469,
+    "first": 1773273600000,
+    "n": 3364,
+    "repo": "meta-pytorch/pytorch-gha-infra"
+  },
+  {
+    "actors": 11,
+    "cost": 2660,
+    "first": 1772150400000,
+    "n": 2798,
+    "repo": "pytorch/test-infra"
+  },
+  {
+    "actors": 29,
+    "cost": 952,
+    "first": 1774483200000,
+    "n": 629,
+    "repo": "pytorch/executorch"
+  },
+  {
+    "actors": 21,
+    "cost": 612,
+    "first": 1773100800000,
+    "n": 493,
+    "repo": "pytorch/ao"
+  },
+  {
+    "actors": 17,
+    "cost": 150,
+    "first": 1769212800000,
+    "n": 454,
+    "repo": "pytorch/ciforge"
+  },
+  {
+    "actors": 5,
+    "cost": 2292,
+    "first": 1788912000000,
+    "n": 397,
+    "repo": "metainternal/pytorch-gha-infra"
+  },
+  {
+    "actors": 17,
+    "cost": 538,
+    "first": 1773100800000,
+    "n": 273,
+    "repo": "pytorch/torchtitan"
+  },
+  {
+    "actors": 13,
+    "cost": 88,
+    "first": 1778630400000,
+    "n": 81,
+    "repo": "pytorch/helion"
+  },
+  {
+    "actors": 4,
+    "cost": 69,
+    "first": 1779926400000,
+    "n": 44,
+    "repo": "pytorch/ci-infra"
+  },
+  {
+    "actors": 3,
+    "cost": 29,
+    "first": 1772409600000,
+    "n": 31,
+    "repo": "pytorch/tutorials"
+  },
+  {
+    "actors": 1,
+    "cost": 2,
+    "first": 1783382400000,
+    "n": 3,
+    "repo": "meta-pytorch/attention-gym"
+  },
+  {
+    "actors": 1,
+    "cost": 4,
+    "first": 1780963200000,
+    "n": 2,
+    "repo": "meta-pytorch/torchcomms"
+  }
+]

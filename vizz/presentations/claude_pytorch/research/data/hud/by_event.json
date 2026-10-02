@@ -1,0 +1,50 @@
+[
+  {
+    "actors": 11,
+    "avg_cost": 0.55,
+    "avg_min": 1.4,
+    "event_name": "workflow_dispatch",
+    "n": 65853,
+    "turns": 13.2
+  },
+  {
+    "actors": 185,
+    "avg_cost": 2.26,
+    "avg_min": 8.2,
+    "event_name": "issue_comment",
+    "n": 10784,
+    "turns": 28.3
+  },
+  {
+    "actors": 1387,
+    "avg_cost": 0.35,
+    "avg_min": 1.2,
+    "event_name": "workflow_run",
+    "n": 4975,
+    "turns": 7.5
+  },
+  {
+    "actors": 4,
+    "avg_cost": 4.25,
+    "avg_min": 12.2,
+    "event_name": "schedule",
+    "n": 3719,
+    "turns": 59.4
+  },
+  {
+    "actors": 8,
+    "avg_cost": 0.18,
+    "avg_min": 0.5,
+    "event_name": "issues",
+    "n": 62,
+    "turns": 5.6
+  },
+  {
+    "actors": 1,
+    "avg_cost": 0.99,
+    "avg_min": 0.2,
+    "event_name": "pull_request_review_comment",
+    "n": 1,
+    "turns": 2
+  }
+]

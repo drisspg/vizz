@@ -1,0 +1,50 @@
+[
+  {
+    "actors": 1,
+    "cat": "drci_advisor",
+    "cost": 16345,
+    "n": 33195,
+    "p50_cost": 0.4,
+    "p50_min": 0.9
+  },
+  {
+    "actors": 1,
+    "cat": "autorevert_advisor",
+    "cost": 16987,
+    "n": 29085,
+    "p50_cost": 0.52,
+    "p50_min": 1.2
+  },
+  {
+    "actors": 135,
+    "cat": "human_mention",
+    "cost": 20840,
+    "n": 8789,
+    "p50_cost": 1.42,
+    "p50_min": 3.2
+  },
+  {
+    "actors": 1375,
+    "cat": "issue_triage",
+    "cost": 1535,
+    "n": 4453,
+    "p50_cost": 0.32,
+    "p50_min": 1.1
+  },
+  {
+    "actors": 5,
+    "cat": "manual_dispatch",
+    "cost": 382,
+    "n": 875,
+    "p50_cost": 0.25,
+    "p50_min": 1.4
+  },
+  {
+    "actors": 1,
+    "cat": "bot_mention",
+    "cost": 1219,
+    "n": 428,
+    "p50_cost": 1.7,
+    "p50_min": 2.9
+  }
+]

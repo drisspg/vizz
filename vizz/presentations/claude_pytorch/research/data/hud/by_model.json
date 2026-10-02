@@ -1,0 +1,50 @@
+[
+  {
+    "model": "global.anthropic.claude-opus-4-6-v1",
+    "n": 63337
+  },
+  {
+    "model": "global.anthropic.claude-opus-5-5",
+    "n": 5986
+  },
+  {
+    "model": "global.anthropic.claude-opus-5",
+    "n": 4511
+  },
+  {
+    "model": "global.anthropic.claude-sonnet-4-5-20250929-v1:0",
+    "n": 3534
+  },
+  {
+    "model": "global.anthropic.claude-opus-4-8",
+    "n": 3364
+  },
+  {
+    "model": "global.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "n": 2113
+  },
+  {
+    "model": "global.anthropic.claude-sonnet-5",
+    "n": 1630
+  },
+  {
+    "model": "global.anthropic.claude-fable-5",
+    "n": 365
+  },
+  {
+    "model": "",
+    "n": 314
+  },
+  {
+    "model": "global.anthropic.claude-sonnet-4-20250514-v1:0",
+    "n": 129
+  },
+  {
+    "model": "global.anthropic.claude-opus-4-5-20251101-v1:0",
+    "n": 91
+  },
+  {
+    "model": "us.anthropic.claude-sonnet-4-6",
+    "n": 20
+  }
+]

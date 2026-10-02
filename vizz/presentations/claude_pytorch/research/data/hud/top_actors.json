@@ -1,0 +1,62 @@
+[
+  {
+    "actor": "pytorch-bot[bot]",
+    "n": 33195
+  },
+  {
+    "actor": "pytorch-auto-revert[bot]",
+    "n": 29513
+  },
+  {
+    "actor": "jansel",
+    "n": 3757
+  },
+  {
+    "actor": "pytorchgreenlight[bot]",
+    "n": 2686
+  },
+  {
+    "actor": "bobrenjc93",
+    "n": 2159
+  },
+  {
+    "actor": "Claude Infra Investigations (scheduled)",
+    "n": 2133
+  },
+  {
+    "actor": "ZainRizvi",
+    "n": 1585
+  },
+  {
+    "actor": "github-actions[bot]",
+    "n": 586
+  },
+  {
+    "actor": "izaitsevfb",
+    "n": 391
+  },
+  {
+    "actor": "drisspg",
+    "n": 311
+  },
+  {
+    "actor": "ezyang",
+    "n": 260
+  },
+  {
+    "actor": "Skylion007",
+    "n": 207
+  },
+  {
+    "actor": "vkuzo",
+    "n": 200
+  },
+  {
+    "actor": "zou3519",
+    "n": 197
+  },
+  {
+    "actor": "atalman",
+    "n": 181
+  }
+]
