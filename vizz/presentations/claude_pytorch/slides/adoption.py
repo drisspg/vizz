@@ -131,14 +131,10 @@ def build(scene: SlideBase) -> None:
     scene.play(FadeIn(head), FadeIn(label), Create(baseline), run_time=0.5)
     scene.play(*[GrowFromEdge(b, DOWN) for b in bars], FadeIn(ticks), run_time=1.0)
     scene.play(Create(marker), FadeIn(marker_label), FadeIn(peak), run_time=0.5)
-    scene.wait(0.2)
-    scene.next_slide(
-        notes="adoption.weekly — Human @claude invocations per week on pytorch/pytorch, from HUD's usage table. A trickle during the pilot; it picks up after Feb 27 when anyone with write access could use it, peaks around 900 a week in early June, and settles at a few hundred a week, with 25 to 40 distinct people every week."
-    )
     scene.play(FadeIn(stats, lag_ratio=0.15), run_time=0.8)
     scene.wait(0.2)
     scene.next_slide(
-        notes="adoption.stats — Since Feb 28: 135 people, 8.7k runs on 4.1k distinct PRs and issues. Triage has touched 4.4k issues from 1,375 different reporters. Thirteen repos report usage."
+        notes="adoption.stats — Human @claude invocations per week on pytorch/pytorch, from HUD's usage table. A trickle during the pilot; it picks up after Feb 27 when anyone with write access could use it, peaks around 900 a week in early June, and settles at a few hundred a week, with 25 to 40 distinct people every week. Since Feb 28: 135 people, 8.7k runs on 4.1k distinct PRs and issues. Triage has touched 4.4k issues from 1,375 different reporters. Thirteen repos report usage."
     )
     scene.play(
         FadeIn(split_title), FadeIn(split_bar), FadeIn(split_labels), run_time=0.6

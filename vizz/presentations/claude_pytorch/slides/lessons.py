@@ -52,14 +52,8 @@ def build(scene: SlideBase) -> None:
     rows.next_to(head, DOWN, buff=0.5).to_edge(LEFT, buff=0.7)
 
     scene.play(FadeIn(head), run_time=0.4)
-    for i, row in enumerate(rows):
-        scene.play(FadeIn(row, shift=UP * 0.1), run_time=0.5)
-        if i in (1, 3):
-            scene.wait(0.2)
-            scene.next_slide(
-                notes=(
-                    "lessons.loops — Bots trigger bots: autorevert tags @claude on its own revert comments, and Dr.CI dispatches the advisor. Only one bot passes the @claude gate, and Dr.CI caps advisor runs per PR and skips during outages. Second: credentials last one hour and are never refreshed, so jobs stop at 55 minutes and a hook tells Claude when to converge and post."
-                    if i == 1
-                    else "lessons.receipts — Some GitHub triggers run code from the PR branch; we removed pull_request_review_comment because tricking a maintainer into running it was easier than prompt injection. And trust needs receipts: every transcript is public, every bot edit is labeled."
-                )
-            )
+    scene.play(FadeIn(rows, shift=UP * 0.1, lag_ratio=0.25), run_time=1.2)
+    scene.wait(0.2)
+    scene.next_slide(
+        notes="lessons — Bots trigger bots: autorevert tags @claude on its own revert comments, and Dr.CI dispatches the advisor. Only one bot passes the @claude gate, and Dr.CI caps advisor runs per PR and skips during outages. Second: credentials last one hour and are never refreshed, so jobs stop at 55 minutes and a hook tells Claude when to converge and post. Some GitHub triggers run code from the PR branch; we removed pull_request_review_comment because tricking a maintainer into running it was easier than prompt injection. And trust needs receipts: every transcript is public, every bot edit is labeled."
+    )

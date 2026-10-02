@@ -88,10 +88,6 @@ def build(scene: SlideBase) -> None:
 
     scene.play(FadeIn(head), FadeIn(axis_label), Create(baseline), run_time=0.5)
     scene.play(*[GrowFromEdge(b, DOWN) for b in bars], FadeIn(labels), run_time=1.0)
-    scene.wait(0.2)
-    scene.next_slide(
-        notes="problem.prs — PRs opened on pytorch/pytorch per month, from HUD's ClickHouse. Roughly 1.5k a month in early 2025, about 3k a month by August 2026. Amber is 2026."
-    )
 
     stat_rows = VGroup()
     for quarter, n in FIRST_TIME:
@@ -114,7 +110,7 @@ def build(scene: SlideBase) -> None:
     scene.play(FadeIn(side, shift=LEFT * 0.1), run_time=0.6)
     scene.wait(0.2)
     scene.next_slide(
-        notes="problem.first_time — The sharpest change is who is sending PRs. PRs from authors with no prior association went from 190 a quarter to over 1,800. Issue volume is flat; the growth is in PRs."
+        notes="problem.first_time — PRs opened on pytorch/pytorch per month, from HUD's ClickHouse. Roughly 1.5k a month in early 2025, about 3k a month by August 2026. Amber is 2026. The sharpest change is who is sending PRs. PRs from authors with no prior association went from 190 a quarter to over 1,800. Issue volume is flat; the growth is in PRs."
     )
 
     question = punchline(

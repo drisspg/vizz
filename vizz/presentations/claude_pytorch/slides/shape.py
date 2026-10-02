@@ -100,10 +100,6 @@ def build(scene: SlideBase) -> None:
 
     scene.play(FadeIn(head), FadeIn(stages[:2]), Create(arrows[0]), run_time=0.6)
     scene.play(FadeIn(gate_notes, shift=UP * 0.1), run_time=0.5)
-    scene.wait(0.2)
-    scene.next_slide(
-        notes="shape.gate — A comment is untrusted text. Before any runner does real work, the job-level if: checks the org, the mention, and the author association; then an API call confirms write permission. Anyone with write access can use it; nobody else can."
-    )
     scene.play(
         FadeIn(stages[2]),
         Create(arrows[1]),
@@ -112,7 +108,7 @@ def build(scene: SlideBase) -> None:
     )
     scene.wait(0.2)
     scene.next_slide(
-        notes="shape.auth — No API keys in GitHub. The job runs in a GitHub environment called bedrock, mints an OIDC token, and assumes one AWS role whose trust policy names each onboarded repo's bedrock environment. That environment only deploys from main, so a PR cannot change the workflow and get credentials."
+        notes="shape.auth — History: Ivan shipped @claude on Jan 16 for a 20-person pilot, issue triage followed on Jan 28, and on Feb 27 Ivan replaced the allowlist with this permission check. In March Zain moved it into test-infra as a reusable workflow. A comment is untrusted text. Before any runner does real work, the job-level if: checks the org, the mention, and the author association; then an API call confirms write permission. Anyone with write access can use it; nobody else can. No API keys in GitHub. The job runs in a GitHub environment called bedrock, mints an OIDC token, and assumes one AWS role whose trust policy names each onboarded repo's bedrock environment. That environment only deploys from main, so a PR cannot change the workflow and get credentials."
     )
     scene.play(
         FadeIn(stages[3]),

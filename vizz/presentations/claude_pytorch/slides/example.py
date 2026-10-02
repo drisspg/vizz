@@ -81,14 +81,10 @@ def build(scene: SlideBase) -> None:
     outcome.next_to(reply, DOWN, buff=0.4).align_to(reply, LEFT).shift(RIGHT * 0.25)
 
     scene.play(FadeIn(head), FadeIn(pr), FadeIn(ask, shift=UP * 0.1), run_time=0.6)
-    scene.wait(0.2)
-    scene.next_slide(
-        notes="example.ask — An external contributor's FP8 PR adding a CPU path for scaled_mm. I asked @claude to look for subtle bugs. This is the whole interface: a comment."
-    )
     scene.play(FadeIn(reply, shift=UP * 0.1), run_time=0.6)
     scene.wait(0.2)
     scene.next_slide(
-        notes="example.reply — Four and a half minutes later: a compile error in the MKLDNN branch that only some platforms build, and a copy-paste bug where scale_b came from scale_a. Both real."
+        notes="example.reply — An external contributor's FP8 PR adding a CPU path for scaled_mm. I asked @claude to look for subtle bugs. This is the whole interface: a comment. Four and a half minutes later: a compile error in the MKLDNN branch that only some platforms build, and a copy-paste bug where scale_b came from scale_a. Both real."
     )
     scene.play(FadeIn(outcome, shift=UP * 0.1), run_time=0.6)
     scene.wait(0.2)

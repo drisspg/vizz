@@ -72,14 +72,10 @@ def build(scene: SlideBase) -> None:
     )
 
     scene.play(FadeIn(head), FadeIn(sub), FadeIn(stage1), run_time=0.6)
-    scene.wait(0.2)
-    scene.next_slide(
-        notes="two_stage.untrusted — The first version of triage was one job with Bedrock credentials triggered by issues: opened. A day later we split it. Stage 1 runs in the issue author's context, has no secrets, and does one thing: write the issue number to an artifact."
-    )
     scene.play(Create(a1), FadeIn(artifact), Create(a2), FadeIn(stage2), run_time=0.8)
     scene.wait(0.2)
     scene.next_slide(
-        notes="two_stage.privileged — Stage 2 is triggered by workflow_run, so its code always comes from main. It holds the bedrock environment and issues: write, and it re-validates the one number it received. The same split is used by the hardened PR review, Green Light, and ao's CI-failure bot."
+        notes="two_stage.privileged — The first version of triage was one job with Bedrock credentials triggered by issues: opened. A day later we split it. Stage 1 runs in the issue author's context, has no secrets, and does one thing: write the issue number to an artifact. Stage 2 is triggered by workflow_run, so its code always comes from main. It holds the bedrock environment and issues: write, and it re-validates the one number it received. The same split is used by the hardened PR review, Green Light, and ao's CI-failure bot."
     )
     scene.play(FadeIn(quote, shift=UP * 0.1), FadeIn(source), run_time=0.6)
     scene.wait(0.2)

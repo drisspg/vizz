@@ -76,14 +76,10 @@ def build(scene: SlideBase) -> None:
     scene.play(FadeIn(head), FadeIn(signal), run_time=0.5)
     scene.play(Create(dispatch), FadeIn(dispatch_label), FadeIn(advisor), run_time=0.6)
     scene.play(Create(emit), FadeIn(verdict), run_time=0.6)
-    scene.wait(0.2)
-    scene.next_slide(
-        notes="agents_vs_agents.verdict — Autorevert is itself an automated agent watching trunk. When it sees an early failure pattern it dispatches the Claude CI Advisor, which reads the logs and the suspect diff and must answer in a JSON schema: related, unsure, not_related, infra_issue, or garbage, with confidence and reasoning. It launched at 13 of 13 on its eval set."
-    )
     scene.play(Create(back), FadeIn(back_label), run_time=0.6)
     scene.wait(0.2)
     scene.next_slide(
-        notes="agents_vs_agents.loop — Verdicts land in ClickHouse and autorevert reads them back when deciding whether to revert. Dr.CI dispatches the same advisor on PR failures and renders the verdict inline in its comment."
+        notes="agents_vs_agents.loop — Autorevert is itself an automated agent watching trunk. When it sees an early failure pattern it dispatches the Claude CI Advisor, which reads the logs and the suspect diff and must answer in a JSON schema: related, unsure, not_related, infra_issue, or garbage, with confidence and reasoning. It launched at 13 of 13 on its eval set. Verdicts land in ClickHouse and autorevert reads them back when deciding whether to revert. Dr.CI dispatches the same advisor on PR failures and renders the verdict inline in its comment."
     )
     scene.play(FadeIn(bottom, shift=UP * 0.1), run_time=0.6)
     scene.wait(0.2)

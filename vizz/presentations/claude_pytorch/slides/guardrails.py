@@ -57,14 +57,10 @@ def build(scene: SlideBase) -> None:
     human.to_edge(DOWN, buff=0.6)
 
     scene.play(FadeIn(head), FadeIn(tools, shift=UP * 0.1), run_time=0.6)
-    scene.wait(0.2)
-    scene.next_slide(
-        notes="guardrails.tools — Triage runs on Sonnet with exactly five GitHub tools: read the issue, read comments, update it, comment, search. No shell, no file access. The smallest tool surface that can do the job."
-    )
     scene.play(FadeIn(hooks, shift=LEFT * 0.1), run_time=0.6)
     scene.wait(0.2)
     scene.next_slide(
-        notes="guardrails.hooks — The prompt says only touch this issue. A hook enforces it in code. Another hook strips any label outside a 282-label allowlist, so a prompt injection cannot add ciflow or sev labels. Every change gets bot-triaged so we can audit it."
+        notes="guardrails.hooks — Triage runs on Sonnet with exactly five GitHub tools: read the issue, read comments, update it, comment, search. No shell, no file access. The smallest tool surface that can do the job. The prompt says only touch this issue. A hook enforces it in code. Another hook strips any label outside a 282-label allowlist, so a prompt injection cannot add ciflow or sev labels. Every change gets bot-triaged so we can audit it."
     )
     scene.play(FadeIn(human, shift=UP * 0.1), run_time=0.5)
     scene.wait(0.2)

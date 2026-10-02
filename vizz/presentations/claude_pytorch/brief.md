@@ -5,7 +5,7 @@
 - **Speaker:** Driss Guessous (PyTorch @ Meta). Thanks: Ivan Zaitsev (opened `@claude` to all contributors, pytorch/pytorch#176027).
 - **Audience:** PyTorch contributors and maintainers; beginner track, so explain GitHub Actions/OIDC in one line each, no deep infra.
 - **One thing to remember:** agents raise the volume of code and issues; maintainers need agent-shaped infra (scoped, auditable, repo-aware) to keep the bar, not replace it.
-- **Length:** ~9-10 slides, ~1 min each.
+- **Length:** 11 slides, 19 pauses (~55 s per slide).
 - **Output:** manim-slides present + pptx export (`uv run manim-slides convert ClaudePytorchDeck claude_pytorch.pptx`).
 - **Must be technically accurate:** yes. Every workflow detail and adoption number traces to `research/`.
 - **Style:** Nuggets light (same palette as the FlexGEMM deck at the same conference). Semantic colors: green = trusted/privileged/maintainer, amber = agent/Claude, red = untrusted input.

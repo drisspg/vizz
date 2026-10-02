@@ -2,11 +2,12 @@
 
 ## Overview
 - Audience: PyTorch contributors/maintainers, beginner track. 10-minute lightning talk, two speakers.
+- Budget: 11 slides, 19 pauses (~55 s per slide). Timeline slide cut; its dates live in the shape speaker notes.
 - Question: if agents multiply the PRs and issues flowing into PyTorch, what do maintainers need to keep the bar?
 - Takeaway: give maintainers agent-shaped infra: scoped, auditable, repo-aware. Not a replacement.
 - Semantic colors (every slide): red = untrusted input, amber = the agent / Claude, green = trusted / privileged / human decision.
 - Facts trace to `research/` (`hud_usage.md`, `pytorch_repo.md`, `test_infra.md`). Data collected 2026-10-02.
-- Speaker split (proposal): Driss 1-4, 6-7, 10, 12; Ivan 5, 8-9, 11.
+- Speaker split (proposal): Driss title, problem, example, guardrails, adoption, closing; Ivan shape, two_stage, skills, agents_vs_agents, lessons.
 
 ## title
 - Kicker, title, subtitle, speakers (Driss Guessous, Ivan Zaitsev).
@@ -16,10 +17,6 @@
 - Beat 1: PRs opened per month, pytorch/pytorch, Jan 2025 → Sep 2026 bar chart (~1.5k → ~3k).
 - Beat 2: first-time-author PRs per quarter 190 → 1,824 (~10x). Issues flat.
 - Beat 3: the question + AI_POLICY quote: "We do not accept contributions created by fully autonomous agents."
-
-## timeline — "Nine months, one bot at a time"
-- 2026-01-16 `@claude` pilot (20 handles) · 01-28 issue triage · 02-27 any maintainer with write access (#176027) · 03-06 reusable workflow in test-infra · 03-13 autorevert advisor · 07 Dr.CI auto-dispatch · 08 public execution logs · 09 hardened PR review.
-- Beat 1: interactive line (Jan-Mar). Beat 2: CI agents (Mar-Sep).
 
 ## example — "`@claude` on a real PR"
 - PR #176266 (external contributor, scaled_mm_v2 CPU). Comment bubble: "@claude look for any subtle bugs on this pr".

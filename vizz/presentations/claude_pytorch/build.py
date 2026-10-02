@@ -17,7 +17,6 @@ from vizz.presentations.claude_pytorch.slides import (
     problem,
     shape,
     skills,
-    timeline,
     title,
     two_stage,
 )
@@ -25,7 +24,6 @@ from vizz.presentations.claude_pytorch.slides import (
 SLIDES = {
     "title": title,
     "problem": problem,
-    "timeline": timeline,
     "example": example,
     "shape": shape,
     "two_stage": two_stage,
