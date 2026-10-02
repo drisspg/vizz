@@ -1,4 +1,4 @@
-"""Round-2 problem: PR dots pile up month by month, first-time authors turn red, issues stay flat.
+"""Round-2 problem: PR dots pour through a funnel into monthly columns; first-time authors turn red.
 
 Standalone render:
     uv run manim -qm --media_dir /tmp/v2_problem \
@@ -15,17 +15,21 @@ Colors: muted = PRs, red = first-time (untrusted) authors, muted = issues.
 import random
 
 from manim import (
-    DOWN,
     LEFT,
     RIGHT,
     UP,
     Dot,
     FadeIn,
+    FadeOut,
     LaggedStart,
     Line,
+    Polygon,
+    UpdateFromAlphaFunc,
     ValueTracker,
     VGroup,
+    VMobject,
     always_redraw,
+    linear,
     smooth,
 )
 
@@ -47,17 +51,18 @@ MONTHLY_PRS = [
 # fmt: on
 # Quarters 2025 Q1 .. 2026 Q3, aligned with MONTHLY_PRS[3q : 3q + 3].
 FIRST_TIME_PRS = [190, 226, 195, 374, 636, 643, 1824]
-ISSUES = [2098, 2320, 1932, 2084, 1536, 1973, 1881]
 
 COLS_PER_MONTH = 2
 SPACING = 0.11
 DOT_RADIUS = 0.04
 MONTH_PITCH = 0.56
 X0 = -5.6  # left column of the first month
-BASELINE_Y = -2.8
-ISSUE_ROW_Y = 1.1  # bottom row of the issue band
+BASELINE_Y = -3.0
 COUNTER_Y = 2.3
-ISSUE_COLS = 11
+# Funnel above the chart: wide mouth at the top, narrow neck the dots fall through.
+FUNNEL_X = 1.2
+MOUTH_Y, NECK_Y = 2.15, 1.15
+MOUTH_HALF, NECK_HALF = 1.1, 0.12
 LABEL_MONTHS = ("2025-01", "2026-01", "2026-09")
 
 
@@ -87,6 +92,16 @@ def _red_per_month(month_dots: list[int]) -> list[int]:
     return out
 
 
+def _pour(dot: Dot, path: VMobject) -> UpdateFromAlphaFunc:
+    """Fade the dot in at the funnel mouth while it follows its path into the column."""
+
+    def update(d: Dot, alpha: float) -> None:
+        d.move_to(path.point_from_proportion(smooth(alpha)))
+        d.set_fill(opacity=0.75 * min(1.0, alpha * 6))
+
+    return UpdateFromAlphaFunc(dot, update)
+
+
 def build(scene: SlideBase) -> None:
     t = scene.theme
     rng = random.Random(11)
@@ -94,17 +109,34 @@ def build(scene: SlideBase) -> None:
 
     counts = [round(n / PRS_PER_DOT) for _, n in MONTHLY_PRS]
     columns = [_column(i, c) for i, c in enumerate(counts)]
-    dots_by_month = [
-        VGroup(
-            *[
-                Dot(radius=DOT_RADIUS, color=t.muted_text, fill_opacity=0.75).move_to(
-                    p + UP * (4.5 + rng.random() * 1.5) + RIGHT * rng.uniform(-0.2, 0.2)
-                )
-                for p in col
-            ]
-        )
-        for col in columns
-    ]
+    neck = [FUNNEL_X, NECK_Y, 0]
+    dots_by_month, paths_by_month = [], []
+    for col in columns:
+        dots, paths = VGroup(), []
+        for p in col:
+            start = [FUNNEL_X + rng.uniform(-0.8, 0.8) * MOUTH_HALF, MOUTH_Y + 0.25, 0]
+            path = VMobject().set_points_smoothly(
+                [
+                    start,
+                    [FUNNEL_X, (MOUTH_Y + NECK_Y) / 2, 0],
+                    neck,
+                    [(neck[0] + p[0]) / 2, NECK_Y - 0.6, 0],
+                    p,
+                ]
+            )
+            dots.add(Dot(start, radius=DOT_RADIUS, color=t.muted_text, fill_opacity=0))
+            paths.append(path)
+        dots_by_month.append(dots)
+        paths_by_month.append(paths)
+    funnel = Polygon(
+        [FUNNEL_X - MOUTH_HALF, MOUTH_Y, 0],
+        [FUNNEL_X + MOUTH_HALF, MOUTH_Y, 0],
+        [FUNNEL_X + NECK_HALF, NECK_Y, 0],
+        [FUNNEL_X - NECK_HALF, NECK_Y, 0],
+        color=t.divider,
+        stroke_width=1.6,
+        fill_opacity=0,
+    )
 
     # Beat 1: columns drop in month by month while the counter follows the latest month.
     progress = ValueTracker(0)
@@ -120,7 +152,7 @@ def build(scene: SlideBase) -> None:
         )
     )
     unit = scene.meta_text("PRs opened / month · 1 dot = 50 PRs", font_size=14)
-    unit.move_to([X0 + MONTH_PITCH * 20 + SPACING, COUNTER_Y, 0], aligned_edge=RIGHT)
+    unit.move_to([X0, COUNTER_Y - 0.5, 0], aligned_edge=LEFT)
     baseline = Line(
         [X0 - 0.3, BASELINE_Y - 0.12, 0],
         [X0 + MONTH_PITCH * 20 + SPACING + 0.3, BASELINE_Y - 0.12, 0],
@@ -135,23 +167,26 @@ def build(scene: SlideBase) -> None:
             month_labels.add(label)
 
     scene.play(
-        FadeIn(head), FadeIn(unit), FadeIn(baseline), FadeIn(month_labels), run_time=0.4
+        FadeIn(head),
+        FadeIn(unit),
+        FadeIn(baseline),
+        FadeIn(month_labels),
+        FadeIn(funnel),
+        run_time=0.4,
     )
     scene.add(counter)
     drops = []
-    for group, col in zip(dots_by_month, columns, strict=True):
+    for group, paths in zip(dots_by_month, paths_by_month, strict=True):
         drops.append(
             LaggedStart(
-                *[d.animate.move_to(p) for d, p in zip(group, col, strict=True)],
-                lag_ratio=0.01,
+                *[_pour(d, path) for d, path in zip(group, paths, strict=True)],
+                lag_ratio=0.04,
             )
         )
-    for group in dots_by_month:
-        scene.add(group)
     scene.play(
-        LaggedStart(*drops, lag_ratio=0.12),
-        progress.animate(rate_func=smooth).set_value(len(MONTHLY_PRS) - 0.01),
-        run_time=2.8,
+        LaggedStart(*drops, lag_ratio=0.35),
+        progress.animate(rate_func=linear).set_value(len(MONTHLY_PRS) - 0.01),
+        run_time=5.0,
     )
     scene.remove(counter)
     final_counter = scene.title_text(f"{MONTHLY_PRS[-1][1]:,}", font_size=48)
@@ -176,14 +211,24 @@ def build(scene: SlideBase) -> None:
     red_unit = scene.meta_text(
         "first-time-author PRs / quarter", font_size=14, color=t.accent_danger
     )
-    red_unit.move_to(unit, aligned_edge=RIGHT)
+    red_unit.move_to(unit, aligned_edge=LEFT)
     scene.remove(final_counter)
     scene.add(red_counter)
     scene.play(
         FadeIn(red_unit),
         unit.animate.set_opacity(0),
+        funnel.animate.set_stroke(opacity=0.3),
+        *[
+            d.animate.set_fill(opacity=0.22)
+            for group in dots_by_month
+            for d in group
+            if d not in red_dots
+        ],
         LaggedStart(
-            *[d.animate.set_fill(t.accent_danger, opacity=1) for d in red_dots],
+            *[
+                d.animate.set_fill(t.accent_danger, opacity=1).scale(1.5)
+                for d in red_dots
+            ],
             lag_ratio=0.01,
         ),
         first_time.animate(rate_func=smooth).set_value(FIRST_TIME_PRS[-1]),
@@ -200,34 +245,15 @@ def build(scene: SlideBase) -> None:
         notes="problem.first_time — Red is PRs from authors with no prior association with the repo: 190 a quarter in early 2025, over 1,800 a quarter now. Roughly ten times."
     )
 
-    # Beat 3: issues per quarter at the same scale: a flat band above the pile.
-    issue_dots = []
-    for q, n in enumerate(ISSUES):
-        count = round(n / PRS_PER_DOT)
-        x_left = X0 + MONTH_PITCH * 3 * q
-        for k in range(count):
-            p = RIGHT * (x_left + SPACING * (k % ISSUE_COLS)) + UP * (
-                ISSUE_ROW_Y + SPACING * (k // ISSUE_COLS)
-            )
-            issue_dots.append(
-                Dot(radius=DOT_RADIUS, color=t.muted_text, fill_opacity=0.75).move_to(p)
-            )
-    issue_band = VGroup(*issue_dots)
-    issue_unit = scene.meta_text("issues / quarter · flat", font_size=14)
-    issue_unit.next_to(issue_band, UP, buff=0.15).align_to(issue_band, LEFT)
+    # Beat 3: the question.
     question = scene.body_text(
-        "What do maintainers need to keep the bar?", font_size=24
+        "What do maintainers need to keep the bar?", font_size=28
     )
-    question.to_edge(DOWN, buff=0.3)
-    scene.play(
-        FadeIn(issue_band, lag_ratio=0.002),
-        FadeIn(issue_unit),
-        run_time=0.9,
-    )
-    scene.play(FadeIn(question, shift=UP * 0.1), run_time=0.5)
+    question.move_to([X0 + MONTH_PITCH * 20 + SPACING, 1.3, 0], aligned_edge=RIGHT)
+    scene.play(FadeOut(funnel), FadeIn(question, shift=UP * 0.1), run_time=0.5)
     scene.wait(0.2)
     scene.next_slide(
-        notes="problem.issues — Issues, at the same scale, are flat: around two thousand a quarter the whole time. The growth is in PRs, and in who sends them. So: what do maintainers need to keep the bar?"
+        notes="problem.question — Issues over the same period are flat, around two thousand a quarter. The growth is in PRs, and in who sends them. So: what do maintainers need to keep the bar?"
     )
 
 
